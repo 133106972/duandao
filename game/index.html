@@ -55,7 +55,8 @@ button{font-family:inherit;color:inherit}
 
 .scene{position:relative;min-height:230px;overflow:hidden}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block}
-.sinfo{position:absolute;left:0;right:0;top:14px;display:grid;justify-items:center;gap:2px;pointer-events:none;text-align:center;padding:0 16px}
+.sinfo{position:absolute;left:0;right:0;top:14px;display:grid;justify-items:center;gap:2px;pointer-events:none;text-align:center;padding:0 62px}
+.sname{flex-wrap:wrap;justify-content:center}
 .sname{display:flex;gap:8px;align-items:center;font:700 15px var(--serif)}
 .tier{font:700 11px var(--sans);padding:2px 8px;border-radius:99px;border:1px solid currentColor}
 .slevel.punch{animation:punch .28s cubic-bezier(.2,1.6,.4,1)}
@@ -224,6 +225,15 @@ button{font-family:inherit;color:inherit}
 .fire.hot b{color:#FFD23F;font-size:14px}
 #app.fever .strike{background:linear-gradient(180deg,#FFE066,#FFA31A);box-shadow:0 4px 0 #A15C00,0 0 24px rgba(255,200,60,.65);animation:breath .6s ease-in-out infinite}
 #app.fever .obar{box-shadow:0 0 0 2px rgba(255,210,63,.7),0 0 14px rgba(255,200,60,.5)}
+.offer{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.offer .seal{grid-row:span 2;width:44px;height:44px;font-size:26px;cursor:default}
+.offer b{font:700 15px var(--serif)}
+.offer span{font-size:12px;color:var(--dim)}
+.offer .btn{grid-row:span 2;padding:9px 12px;font-size:14px;white-space:nowrap}
+.offer.loan{border-color:rgba(229,72,59,.5);background:rgba(229,72,59,.07)}
+.offer.loan .seal{background:#5A1F1A}
+.offer.bought{opacity:.5}
+.gold-now{font:900 18px var(--serif);color:var(--gold)}
 @media (max-height:760px) and (max-width:899px){.log{display:none}.strike{min-height:72px;font-size:30px}#mcv{height:34px}.mtip{display:none}.panel{gap:8px;padding-block:8px}.slevel{font-size:42px}.pane{min-height:86px}.actions .rest{padding:7px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -231,12 +241,12 @@ button{font-family:inherit;color:inherit}
 <body>
 <div id="app">
   <header class="bar">
-    <div class="stat"><small>第 <span id="period">1</span> 期</small><div class="days" id="days"></div></div>
+    <div class="stat"><small id="periodLbl">第 1 期</small><div class="days" id="days"></div></div>
     <div class="debt">
-      <div class="row"><span>欠钱庄 <b id="quota">0</b></span><span id="gap"></span></div>
+      <div class="row"><span><span id="debtLbl">欠钱庄</span> <b id="quota">0</b></span><span id="gap"></span></div>
       <div class="meter"><i id="meter"></i></div>
     </div>
-    <div class="stat gold"><small>金</small><b id="gold">0</b></div>
+    <div class="stat gold"><small id="goldLbl">金</small><b id="gold">0</b></div>
     <button class="icon" id="codexBtn" type="button" aria-label="兵器图鉴" style="font:400 19px var(--brush)">鉴</button>
     <button class="icon" id="menuBtn" type="button" aria-label="菜单">≡</button>
   </header>
@@ -246,7 +256,7 @@ button{font-family:inherit;color:inherit}
     <div class="sinfo">
       <div class="sname"><span class="tier" id="sTier">凡品</span><span id="sName"></span></div>
       <div class="slevel" id="sLevel">+0</div>
-      <div class="sval">估价 <b id="sVal">0</b><span class="mk" id="sMk"></span></div>
+      <div class="sval"><span id="valLbl">估价</span> <b id="sVal">0</b><span class="mk" id="sMk"></span></div>
     </div>
     <div class="ticker" id="ticker"></div>
     <div class="combo" id="combo"></div>
@@ -262,10 +272,10 @@ button{font-family:inherit;color:inherit}
       <div class="buffs" id="buffs"></div>
     </div>
     <div class="actions">
-      <button class="strike" id="btnStrike" type="button">锤<small id="stam">体力 18/18</small></button>
+      <button class="strike" id="btnStrike" type="button"><span id="strikeLbl">锤</span><small id="stam">体力 18/18</small></button>
       <div class="side">
-        <button class="sell" id="btnSell" type="button">出售<small id="sellPrice">—</small></button>
-        <button class="store" id="btnStore" type="button">上架<small id="rackCount">剑架 0/3</small></button>
+        <button class="sell" id="btnSell" type="button"><span id="sellLbl">出售</span><small id="sellPrice">—</small></button>
+        <button class="store" id="btnStore" type="button"><span id="storeLbl">上架</span><small id="rackCount">剑架 0/3</small></button>
       </div>
       <button class="rest" id="btnRest" type="button">睡一觉 · 明天再打</button>
     </div>
@@ -279,7 +289,7 @@ button{font-family:inherit;color:inherit}
     <div class="pane" id="pane-bag" hidden><div class="bag" id="bag"></div></div>
     <div class="pane" id="pane-market">
       <div class="market">
-        <div class="mhead"><small>剑市 · 现价</small><b id="mNow">×1.00</b><span class="mchg" id="mChg"></span></div>
+        <div class="mhead"><small id="mLbl">剑市 · 现价</small><b id="mNow">×1.00</b><span class="mchg" id="mChg"></span></div>
         <div class="mstats" id="mStats"></div>
         <canvas id="mcv"></canvas>
         <div class="news" id="mNews"></div>
@@ -295,13 +305,14 @@ button{font-family:inherit;color:inherit}
   <div class="title">
     <span class="logo-seal">铺</span>
     <h1 class="logo">一锤子买卖</h1>
-    <p class="tag">打铁 · 赌运气 · 还高利贷</p>
+    <p class="tag" id="tTag">打铁 · 赌运气 · 还高利贷</p>
     <div class="btns">
       <button class="btn" id="tNew" type="button">开张</button>
       <button class="btn ghost" id="tCont" type="button" hidden>接着打</button>
-      <button class="btn ghost" id="tShop" type="button">铺子 · 名望 <span id="tFame">0</span></button>
-      <button class="btn ghost" id="tCodex" type="button">剑谱 · <span id="tCodexN">0/16</span></button>
+      <button class="btn ghost" id="tShop" type="button"><span id="tShopLbl">铺子 · 名望</span> <span id="tFame">0</span></button>
+      <button class="btn ghost" id="tCodex" type="button"><span id="tCodexLbl">兵器图鉴 ·</span> <span id="tCodexN">0/20</span></button>
       <button class="btn ghost" id="tHelp" type="button">规矩</button>
+      <button class="btn ghost" id="tLang" type="button">English</button>
     </div>
     <div class="foot" id="tFoot">v0.3 · 存档在这台设备的浏览器里</div>
   </div>
@@ -309,11 +320,11 @@ button{font-family:inherit;color:inherit}
 
 <div class="screen" id="shopScreen" hidden>
   <div class="shop">
-    <header><h2>铺子</h2><span class="fame">名望 <span id="sFame">0</span></span></header>
-    <p class="foot">每局结束按撑过的期数和最高卖价得名望。升级永久有效。</p>
-    <div class="sec">料子</div>
+    <header><h2 id="shopH">铺子</h2><span class="fame"><span id="sFameLbl">名望</span> <span id="sFame">0</span></span></header>
+    <p class="foot" id="shopFoot">每局结束按撑过的期数和最高卖价得名望。升级永久有效。</p>
+    <div class="sec" id="secMat">料子</div>
     <div class="items" id="matList"></div>
-    <div class="sec">手艺</div>
+    <div class="sec" id="secUpg">手艺</div>
     <div class="items" id="upgList"></div>
     <button class="btn ghost" id="shopBack" type="button">回去</button>
   </div>
@@ -322,7 +333,7 @@ button{font-family:inherit;color:inherit}
 <div class="screen" id="codexScreen" hidden>
   <div class="shop">
     <header><h2>剑谱</h2><span class="fame" id="cCount">0/16</span></header>
-    <p class="foot">打出过的剑型会记在这里。收集得越多，铺子的永久加成越多。</p>
+    <p class="foot" id="codexFoot">打出过的兵器会记在这里。收集得越多，铺子的永久加成越多。</p>
     <div class="miles" id="miles"></div>
     <div class="codex" id="codex"></div>
     <button class="btn ghost" id="codexBack" type="button">回去</button>
