@@ -215,6 +215,15 @@ button{font-family:inherit;color:inherit}
 .stars i{font-style:normal;color:#4A403A}
 .stars i.on{color:var(--gold)}
 .codex{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)!important}
+.fire{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);flex-wrap:wrap}
+.fire b{font:700 12px var(--sans);color:#FFB23F}
+.fire .segs{display:flex;gap:3px}
+.fire .segs i{width:14px;height:8px;border-radius:2px;background:var(--panel2);box-shadow:inset 0 0 0 1px var(--line)}
+.fire .segs i.on{background:linear-gradient(180deg,#FFD23F,#FF7A1A);box-shadow:0 0 6px rgba(255,170,40,.6)}
+.fire.hot{background:linear-gradient(90deg,rgba(255,210,63,.18),rgba(255,122,26,.08));border:1px solid rgba(255,210,63,.55);border-radius:10px;padding:5px 10px;color:#FFE7A8;animation:breath 0.8s ease-in-out infinite}
+.fire.hot b{color:#FFD23F;font-size:14px}
+#app.fever .strike{background:linear-gradient(180deg,#FFE066,#FFA31A);box-shadow:0 4px 0 #A15C00,0 0 24px rgba(255,200,60,.65);animation:breath .6s ease-in-out infinite}
+#app.fever .obar{box-shadow:0 0 0 2px rgba(255,210,63,.7),0 0 14px rgba(255,200,60,.5)}
 @media (max-height:760px) and (max-width:899px){.log{display:none}.strike{min-height:72px;font-size:30px}#mcv{height:34px}.mtip{display:none}.panel{gap:8px;padding-block:8px}.slevel{font-size:42px}.pane{min-height:86px}.actions .rest{padding:7px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -249,6 +258,7 @@ button{font-family:inherit;color:inherit}
     <div class="odds">
       <div class="owrap"><div class="obar" id="obar"><i style="background:var(--o-brk)"></i><i style="background:var(--o-dmg)"></i><i style="background:var(--o-keep)"></i><i style="background:var(--o-succ)"></i><i style="background:var(--o-great)"></i></div><i class="needle" id="needle"></i></div>
       <div class="olegend" id="olegend"></div>
+      <div class="fire" id="fire"></div>
       <div class="buffs" id="buffs"></div>
     </div>
     <div class="actions">

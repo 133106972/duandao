@@ -1,4 +1,4 @@
-// 一锤子买卖 v0.4 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 v0.5 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -10,13 +10,15 @@ const pick = (a) => a[Math.floor(R() * a.length)];
 const DEMO = location.hash === '#demo';
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const DAYS = 3, SAVE_V = 3;
+const FIRE_MAX = 10, FEVER_LEN = 8, FEVER_GREAT = 0.15; // 火候满 10 格进入上头时刻：8 锤不花体力、不会碎、不会受损、大成功率 +15%
 
 // ---------- numbers: Chinese large units ----------
-const UNITS = [['极', 1e48], ['载', 1e44], ['正', 1e40], ['涧', 1e36], ['沟', 1e32], ['穰', 1e28], ['秭', 1e24], ['垓', 1e20], ['京', 1e16], ['兆', 1e12], ['亿', 1e8], ['万', 1e4]];
+// 万进：万 亿 兆 京 垓 秭 穰 沟 涧 正 载 极 恒河沙 阿僧祇 那由他 不可思议 无量大数，用完以后叠「无量大数」
+const UNITS = [['无量大数', 1e68], ['不可思议', 1e64], ['那由他', 1e60], ['阿僧祇', 1e56], ['恒河沙', 1e52], ['极', 1e48], ['载', 1e44], ['正', 1e40], ['涧', 1e36], ['沟', 1e32], ['穰', 1e28], ['秭', 1e24], ['垓', 1e20], ['京', 1e16], ['兆', 1e12], ['亿', 1e8], ['万', 1e4]];
 function fmt(n) {
-  if (!isFinite(n)) return '∞';
+  if (!isFinite(n)) return n < 0 ? '-不可说' : '不可说不可说';
   if (n < 0) return '-' + fmt(-n);
-  if (n >= 1e52) return n.toExponential(2).replace('e+', 'e');
+  if (n >= 1e72) return fmt(n / 1e68) + '无量大数';
   for (const [u, v] of UNITS) if (n >= v) { const x = n / v; return String(+x.toFixed(x >= 100 ? 0 : x >= 10 ? 1 : 2)) + u; }
   return Math.floor(n).toLocaleString('zh-CN');
 }
@@ -175,6 +177,7 @@ function odds(s, withBuffs = true) {
   if (b.cui > 0) { keep += brk / 2; brk /= 2; }
   if (b.zhu) { let need = 0.25; const t1 = Math.min(brk, need); brk -= t1; need -= t1; const t2 = Math.min(dmg, need); dmg -= t2; need -= t2; keep -= Math.min(keep, need); }
   if (b.hu) { dmg += brk; brk = 0; }
+  if (run && run.fever > 0) { keep += brk + dmg; brk = dmg = 0; const add = Math.min(FEVER_GREAT, keep); keep -= add; great += add; }
   let succ = 1 - brk - dmg - keep - great;
   if (succ < 0.03) { const tot = brk + dmg + keep + great, k = 0.97 / tot; brk *= k; dmg *= k; keep *= k; great *= k; succ = 0.03; }
   if (run && run.forceGreat) return { brk: 0, dmg: 0, keep: 0, succ: 0, great: 1 };
@@ -275,10 +278,12 @@ const wname = (s) => WP[s.shape].name + '「' + s.name + '」';
 let lastStrike = 0;
 function strike() {
   if (!run || modalOpen()) return;
-  if (run.stam <= 0) { toast(run.bag.bao || run.bag.shen ? '没力气了。背包里有吃的，或者睡一觉' : '没力气了，睡一觉明天再打'); return; }
+  if (run.stam <= 0 && !(run.fever > 0)) { toast(run.bag.bao || run.bag.shen ? '没力气了。背包里有吃的，或者睡一觉' : '没力气了，睡一觉明天再打'); return; }
   const now = performance.now(); if (now - lastStrike < 140) return; lastStrike = now;
   ensureAudio();
-  run.stam--; run.stats.strikes++;
+  const feverStrike = run.fever > 0;
+  if (feverStrike) run.fever--; else run.stam--;
+  run.stats.strikes++;
   const s = run.sword, L = s.level, o = odds(s), b = run.buffs;
   const cum = [o.brk, o.brk + o.dmg, o.brk + o.dmg + o.keep, o.brk + o.dmg + o.keep + o.succ, 1];
   const seg = { brk: 0, dmg: 1, keep: 2, succ: 3, great: 4 };
@@ -295,7 +300,7 @@ function strike() {
   if (r === 'brk' && s.shape === 'yu' && R() < 0.3) { r = 'great'; note = '咸鱼翻身！'; }
   if (r === 'brk' && has('fu') && !run.charmUsed) { r = 'dmg'; run.charmUsed = true; note = '护身符替你挡了一次碎裂'; }
   if (r === 'dmg' && s.shape === 'maton' && R() < 0.3) { r = 'succ'; note = '吸回来了！'; }
-  if (s.shape === 'jitui' && R() < 0.4) { run.stam++; note = note || '啃了口鸡腿，没花体力'; }
+  if (s.shape === 'jitui' && !feverStrike && R() < 0.4) { run.stam++; note = note || '啃了口鸡腿，没花体力'; }
   let delta = 0;
   if (r === 'succ') { delta = 1; if (s.shape === 'dianzuan' && R() < 0.15) { delta = 2; note = note || '电钻连钻两下！'; } run.streak++; }
   else if (r === 'great') { delta = stepUp(s); run.streak++; }
@@ -319,8 +324,14 @@ function strike() {
   addLog(msg[0], msg[1]); if (note) addLog(note, 'c');
   if (nearBreak) addLog('好险！差 ' + pct(roll - o.brk) + ' 就碎了', 'd');
   if (r === 'great' && R() < 0.12) dropItem('大成功的火星里');
+  // 火候: successes stoke the fire; a full fire starts 上头时刻
+  let feverStart = false;
+  if (!feverStrike) {
+    run.fire = clamp((run.fire || 0) + ({ succ: 1, great: 2, keep: 0, dmg: -2 }[r] ?? -99), 0, FIRE_MAX);
+    if (run.fire >= FIRE_MAX) { run.fire = 0; run.fever = FEVER_LEN; feverStart = true; addLog('火候满了，上头时刻！接下来 ' + FEVER_LEN + ' 锤不花体力、不会碎', 'g'); }
+  } else if (!run.fever) addLog('上头时刻结束，冷静下来了');
   tickMarket();
-  fx.strike({ r, raw, delta, roll, seg: seg[raw], nearBreak, tierUp, note, level: after, streak: streakNow });
+  fx.strike({ r, raw, delta, roll, seg: seg[raw], nearBreak, tierUp, note, level: after, streak: streakNow, feverStart, feverEnd: feverStrike && !run.fever });
   sfx('hit');
   render(); saveRun();
 }
@@ -411,6 +422,7 @@ function rest() {
 function endDay() {
   if (has('ye')) { let n = 0; for (const s of [run.sword, ...run.rack]) if (s.level > 0) { s.mul *= 1.08; n++; } if (n) addLog('夜市：' + n + ' 件东西估价 +8%', 'c'); }
   for (const s of run.rack) if (s.shape === 'fagun') { s.mul *= 1.1; addLog('剑架上的法棍又硬了一点：估价 +10%', 'c'); }
+  if (run.fever > 0) { run.fever = 0; addLog('睡了一觉，上头时刻没了'); }
   const close = run.mk.now; closeMarket();
   run.day++; run.stam = maxStam(); run.firstOfDay = true; restock();
   ensureAudio();
@@ -489,7 +501,7 @@ function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false;
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
   $('#tCodex').firstChild.textContent = '兵器图鉴 · ';
-  $('#tFoot').textContent = meta.best.period ? `最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}` : 'v0.4 · 存档在这台设备的浏览器里';
+  $('#tFoot').textContent = meta.best.period ? `最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}` : 'v0.5 · 存档在这台设备的浏览器里';
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -529,7 +541,8 @@ function showHelp() {
   openSheet(`<h2>规矩</h2><ol class="help">
     <li>你开了间铁匠铺，什么都能打：剑、菜刀、咸鱼、电钻……欠了钱庄的钱，每 ${DAYS} 天还一期，一期比一期多。</li>
     <li>点「锤」打铁，每锤花 1 点体力。彩虹条上的指针落在哪，结果就是哪：<b style="color:var(--o-succ)">成功</b> +1、<b style="color:var(--o-great)">大成功</b> +2，也可能受损 -1，甚至<b style="color:var(--o-brk)">碎掉</b>。</li>
-    <li>等级越高越值钱（每级涨 60%），也越容易碎。</li>
+    <li>等级越高越值钱（每级涨 60%），也越容易碎。等级没有上限，数字一直往上走：万、亿、兆……恒河沙、阿僧祇、那由他、不可思议、无量大数。</li>
+    <li>每次成功会给<b style="color:#FFD23F">火候</b>加一格（大成功加两格，受损扣两格，碎了清零）。火候满 10 格进入<b style="color:#FFD23F">上头时刻</b>：接下来 8 锤不花体力、不会碎、不会受损、大成功率 +15%。睡觉会冷静下来。</li>
     <li>剑价每锤都在跳，睡一觉收盘，第二天跳空开盘。卖价 = 估价 × 现价，看准了再卖。</li>
     <li>东西可以挂上剑架存着，等买到护剑符、天工锤再拿下来接着打；小件也能熔进大件里。</li>
     <li>还款日钱不够，剑架上的东西会先被拿去抵债。每还清一期挑一本秘籍。</li>
@@ -604,15 +617,19 @@ function render() {
   if (b.hu) bf.push('护剑符：下一锤不会碎'); if (b.zhu) bf.push('祝福油：下一锤成功率 +25%'); if (b.tian) bf.push('天工锤：下一锤必成'); if (b.cui > 0) bf.push('淬火水：还剩 ' + b.cui + ' 锤'); if (b.ya) bf.push('牙行帖：下次卖 +40%');
   bf.push(wp.name + '：' + wp.desc.replace(/^[^：]*：/, ''));
   $('#buffs').innerHTML = bf.map((x) => `<span>${x}</span>`).join('');
-  $('#stam').textContent = '体力 ' + run.stam + '/' + maxStam();
-  btnS.disabled = run.stam <= 0;
+  $('#stam').textContent = run.fever > 0 ? '上头！还剩 ' + run.fever + ' 锤不花体力' : '体力 ' + run.stam + '/' + maxStam();
+  btnS.disabled = run.stam <= 0 && !(run.fever > 0);
+  const fe = $('#fire'), fr = run.fire || 0;
+  if (run.fever > 0) fe.innerHTML = `<b>上头时刻</b><span>还剩 ${run.fever} 锤 · 不花体力 · 不会碎 · 大成功 +${pct(FEVER_GREAT)}</span>`;
+  else fe.innerHTML = `<b>火候</b><span class="segs">${Array.from({ length: FIRE_MAX }, (_, i) => `<i class="${i < fr ? 'on' : ''}"></i>`).join('')}</span><span>${fr}/${FIRE_MAX} · 满了进入上头时刻</span>`;
+  fe.classList.toggle('hot', run.fever > 0); $('#app').classList.toggle('fever', run.fever > 0);
   $('#btnSell').disabled = s.level < 1;
   $('#sellPrice').textContent = s.level < 1 ? '+1 起收' : fmt(priceOf(s));
   $('#btnStore').disabled = s.level < 1 || run.rack.length >= rackCap();
   $('#rackCount').textContent = '剑架 ' + run.rack.length + '/' + rackCap();
   const rb = $('#btnRest');
   if (performance.now() - restArmed > 2500) rb.textContent = run.day >= DAYS ? '睡一觉 · 收盘 · 明早还款' : '睡一觉 · 收盘';
-  rb.classList.toggle('hot', run.stam <= 0);
+  rb.classList.toggle('hot', run.stam <= 0 && !(run.fever > 0));
   const chg = mk.now / mk.prevClose - 1, up = chg >= 0, cl = up ? 'up' : 'down';
   $('#sMk').innerHTML = `· 剑市 <span class="${cl}">×${mk.now.toFixed(2)} ${up ? '▲' : '▼'}${pct(Math.abs(chg))}</span>`;
   $('#mNow').textContent = '×' + mk.now.toFixed(2); $('#mNow').className = cl;
@@ -909,11 +926,18 @@ const fx = {
     const txt = { succ: ['成功 +' + ev.delta, '#8BD06A'], great: ['大成功！+' + ev.delta, '#F2C14E'], keep: ['无变化', '#A8988A'], dmg: [ev.delta ? '受损 -1' : '受损', '#F08A3C'], brk: ['碎了', '#E5483B'] }[r];
     this.pop(ev.tierUp ? tierOf(ev.level).name + '！' : txt[0], ev.tierUp ? tierOf(ev.level).color : txt[1], r === 'great' || r === 'brk' || ev.tierUp);
     if (ev.note) this.pop2(ev.note, '#F2C14E'); else if (ev.nearBreak) this.pop2('好险！差一点就碎了', '#F08A3C');
+    if (ev.feverStart) setTimeout(() => this.feverOn(), 160);
+    if (ev.feverEnd) this.pop2('冷静下来了', '#A8988A');
     sfx(r, ev.streak);
     vib({ keep: 8, succ: 18, great: [25, 30, 60], dmg: 45, brk: [90, 40, 140] }[r]);
   },
   sold(p, big) { const g = geo(); for (let i = 0; i < (big ? 50 : 26); i++) { const a = -Math.PI / 2 + (R() - 0.5) * 1.8, sp = 200 + R() * 300; this.parts.push({ x: g.cx, y: g.y - 20, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, l: 0.9 + R() * 0.4, c: '#F2C14E', s: 3, coin: true }); } this.pop('+' + fmt(p), '#F2C14E', true); if (big && !REDUCE) { this.slowUntil = performance.now() + 400; this.zoomTo = 1.08; } },
   feed() { const g = geo(); this.heat = 1; this.flash = 0.2; this.sq = 1; for (let i = 0; i < 40; i++) { const a = R() * 6.283, sp = 60 + R() * 200; this.parts.push({ x: g.x0 + R() * g.L, y: g.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120, l: 0.8 + R() * 0.5, c: R() < 0.5 ? '#B680EC' : '#FFD27A', s: 2.5 }); } this.pop('熔了！', '#B680EC', true); },
+  feverOn() {
+    const g = geo(); this.flash = 0.4; this.heat = 1; if (!REDUCE) { this.slowUntil = performance.now() + 600; this.zoomTo = 1.12; this.shake = 1; }
+    for (let i = 0; i < 80; i++) { const a = R() * 6.283, sp = 150 + R() * 380; this.parts.push({ x: g.cx, y: g.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120, l: 0.9 + R() * 0.6, c: R() < 0.5 ? '#FFD23F' : '#FF7A1A', s: 3 }); }
+    this.pop('上头时刻！', '#FFD23F', true); sfx('fever'); vib([40, 30, 40, 30, 120]);
+  },
   reveal(r, name) {
     const rq = RARITY[r]; this.pop2((r >= 4 ? '神话！' : r >= 3 ? '传说！' : '稀有！') + name, rq.color);
     if (r >= 3) { const g = geo(); this.flash = 0.25; if (!REDUCE) { this.slowUntil = performance.now() + 450; this.zoomTo = 1.1; }
@@ -957,7 +981,7 @@ function hammerPose(g) {
 }
 function phiAt(hp) {
   const sw = fx.swing; if (!sw) return hp.rest;
-  const t = fx.gt - sw.t0, from = sw.phi0 ?? hp.rest, A = 55, B = 100, C = 290;
+  const fast = run && run.fever > 0, t = fx.gt - sw.t0, from = sw.phi0 ?? hp.rest, A = fast ? 40 : 55, B = fast ? 78 : 100, C = fast ? 220 : 290;
   if (t < A) { const k = t / A; return from + (hp.wind - from) * (1 - (1 - k) * (1 - k)); }
   if (t < B) { const k = (t - A) / (B - A); return hp.wind * (1 - k * k); }
   if (fx.pending) fx.impact();
@@ -1007,7 +1031,7 @@ function frame(now) {
     fx.shards = fx.shards.filter((p) => p.l > 0);
     for (const p of fx.chips) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 1100 * dt; p.rot += p.vr * dt; p.l -= dt; if (p.y > g.top - 1 && p.vy > 0) { p.y = g.top - 1; p.vy *= -0.38; p.vx *= 0.7; p.vr *= 0.6; } ctx.save(); ctx.globalAlpha = clamp(p.l, 0, 1); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * 0.66); ctx.restore(); }
     fx.chips = fx.chips.filter((p) => p.l > 0);
-    if (!run || run.stam > 0 || fx.swing) {
+    if (!run || run.stam > 0 || run.fever > 0 || fx.swing) {
       const hp = hammerPose(g), phi = phiAt(hp);
       const ts = fx.swing ? fx.gt - fx.swing.t0 : -1;
       if (ts > 50 && ts < 112) for (let k = 3; k >= 1; k--) drawHammerAt(hp, phi + 0.07 * k, 0.12 * (4 - k), 0);
@@ -1016,6 +1040,11 @@ function frame(now) {
     } else if (fx.pending) fx.impact();
     for (const p of fx.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.coin ? 700 : 520) * dt; p.l -= dt; ctx.globalAlpha = clamp(p.l * 1.6, 0, 1); ctx.fillStyle = p.c; if (p.coin) { ctx.beginPath(); ctx.ellipse(p.x, p.y, 4, 4 * Math.abs(Math.sin(now / 90 + p.vx)), 0, 0, 7); ctx.fill(); } else ctx.fillRect(p.x, p.y, p.s, p.s); }
     ctx.globalAlpha = 1; fx.parts = fx.parts.filter((p) => p.l > 0 && p.y < H + 20);
+    if (run && run.fever > 0) {
+      const k = 0.5 + 0.5 * Math.sin(now / 160), vg = ctx.createRadialGradient(g.cx, g.y, Math.min(W, H) * 0.2, g.cx, g.y, Math.max(W, H) * 0.75);
+      vg.addColorStop(0, 'rgba(255,210,63,0)'); vg.addColorStop(1, `rgba(255,170,40,${0.22 + 0.12 * k})`); ctx.fillStyle = vg; ctx.fillRect(-40, -40, W + 80, H + 80);
+      if (R() < 0.5) fx.parts.push({ x: R() * W, y: H + 5, vx: (R() - 0.5) * 40, vy: -200 - R() * 220, l: 1.2, c: '#FFD23F', s: 2 });
+    }
     if (fx.flash > 0) { ctx.fillStyle = `rgba(255,243,176,${fx.flash})`; ctx.fillRect(-40, -40, W + 80, H + 80); }
     ctx.restore();
   }
@@ -1046,10 +1075,11 @@ function sfx(k, streak = 0) {
   const t = ac.currentTime + 0.01;
   try {
     switch (k) {
-      case 'hit': noise(t, 0.08, 0.32, 2600, 0.8); tone(70, t, 0.18, 'sine', 0.18); [1, 2.76, 5.4].forEach((r, i) => tone(400 * r * (1 + R() * 0.02), t, 0.32 - i * 0.08, 'triangle', 0.06)); break;
+      case 'hit': if (run && run.fever > 0) { tone(55, t, 0.22, 'sine', 0.28); noise(t, 0.05, 0.2, 9000, 0.7); } noise(t, 0.08, 0.32, 2600, 0.8); tone(70, t, 0.18, 'sine', 0.18); [1, 2.76, 5.4].forEach((r, i) => tone(400 * r * (1 + R() * 0.02), t, 0.32 - i * 0.08, 'triangle', 0.06)); break;
       case 'succ': { const p = comboPitch(streak); tone(660 * p, t, 0.25, 'sine', 0.09); tone(990 * p, t + 0.06, 0.3, 'sine', 0.06); break; }
       case 'great': { const p = comboPitch(streak); [784, 988, 1175, 1568].forEach((f, i) => tone(f * p, t + i * 0.06, 0.6, 'sine', 0.07)); noise(t, 0.5, 0.05, 6000, 0.5); break; }
       case 'keep': tone(220, t, 0.12, 'triangle', 0.05); break;
+      case 'fever': [392, 494, 587, 784, 988, 1175, 1568].forEach((f, i) => tone(f, t + i * 0.05, 0.5, 'sawtooth', 0.035)); [0, 0.12, 0.24, 0.36].forEach((d) => tone(55, t + d, 0.15, 'sine', 0.3)); noise(t, 0.8, 0.08, 5000, 0.4, 12000); break;
       case 'rare': [523, 659, 784, 1046, 1318, 1568].slice(0, streak >= 4 ? 6 : 5).forEach((f, i) => tone(f, t + i * 0.07, 0.7, 'triangle', 0.07)); noise(t, 0.6, 0.06, 7000, 0.5); break;
       case 'dmg': tone(110, t, 0.35, 'sawtooth', 0.05); noise(t, 0.25, 0.14, 700, 1); break;
       case 'brk': noise(t, 0.7, 0.45, 3000, 0.6, 300); tone(60, t, 0.6, 'sawtooth', 0.08); break;

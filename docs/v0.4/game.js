@@ -137,14 +137,14 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } },
 };
 const META_DEFAULT = { fame: 0, totalFame: 0, upg: {}, mats: ['iron'], mat: 'iron', runs: 0, best: { period: 0, level: 0, sale: 0 }, codex: {}, seenHelp: false, muted: false, vibe: true };
-let meta = Object.assign({}, META_DEFAULT, DEMO ? {} : store.get('ycmm-meta', {}));
+let meta = Object.assign({}, META_DEFAULT, DEMO ? {} : store.get('ycmm-v0.4-meta', {}));
 if (!meta.codex) meta.codex = {};
 for (const k of Object.keys(meta.codex)) if (!WP[k]) delete meta.codex[k]; // drop shapes from older versions
 if (meta.vibe === undefined) meta.vibe = true;
-let run = DEMO ? null : store.get('ycmm-run', null);
+let run = DEMO ? null : store.get('ycmm-v0.4-run', null);
 if (run && run.v !== SAVE_V) run = null;
-const saveMeta = () => { if (!DEMO) store.set('ycmm-meta', meta); };
-const saveRun = () => { if (!DEMO && run) store.set('ycmm-run', run); };
+const saveMeta = () => { if (!DEMO) store.set('ycmm-v0.4-meta', meta); };
+const saveRun = () => { if (!DEMO && run) store.set('ycmm-v0.4-run', run); };
 
 // ---------- rules ----------
 const has = (id) => !!run && run.relics.includes(id);
@@ -458,7 +458,7 @@ function gameOver(lines) {
   meta.fame += fame; meta.totalFame += fame;
   const b = meta.best, rec = cleared > b.period || st.maxSale > b.sale;
   b.period = Math.max(b.period, cleared); b.level = Math.max(b.level, st.maxLevel); b.sale = Math.max(b.sale, st.maxSale);
-  saveMeta(); store.del('ycmm-run'); sfx('fail'); vib([100, 60, 160]);
+  saveMeta(); store.del('ycmm-v0.4-run'); sfx('fail'); vib([100, 60, 160]);
   const L2 = [['撑过', cleared + ' 期'], ['最高打到', '+' + st.maxLevel], ['单件最高卖价', fmt(st.maxSale)], ['一共打了', st.strikes + ' 锤'], ['碎掉', st.breaks + ' 件'], ['图鉴', codexN() + '/' + WEAPONS.length]];
   run = null;
   openSheet(`<h2>铺子被钱庄收走了</h2>${linesHtml(lines)}${linesHtml(L2)}<p>名望 <b style="color:var(--gold)">+${fame}</b>${rec ? ' · 新纪录' : ''}，可以去铺子里升级。</p><div class="btns"><button class="btn" id="mAgain" type="button">再开一家</button><button class="btn ghost" id="mShop" type="button">去铺子</button></div>`);
