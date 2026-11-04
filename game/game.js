@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.14 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.15 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -17,7 +17,7 @@ const FIRE_MAX = 10, FEVER_LEN = 8, FEVER_GREAT = 0.15; // full fire (10) starts
 // every visible string goes through T(zh, en); data tables carry `en` / `descEn` fields
 // 繁體 is generated from the Simplified text with this character table (built with OpenCC s2twp, see DESIGN.md)
 let LANG = 'zh';
-const TRAD = {"万":"萬","东":"東","两":"兩","个":"個","么":"麼","乐":"樂","买":"買","于":"於","云":"雲","亿":"億","从":"從","价":"價","优":"優","会":"會","伞":"傘","传":"傳","体":"體","侠":"俠","债":"債","儿":"兒","关":"關","内":"內","军":"軍","冲":"衝","准":"準","凉":"涼","减":"減","几":"機","凤":"鳳","击":"擊","刚":"剛","制":"製","剑":"劍","动":"動","励":"勵","匀":"勻","单":"單","卖":"賣","历":"曆","厨":"廚","参":"參","变":"變","叠":"疊","号":"號","后":"後","吗":"嗎","听":"聽","咸":"鹹","喂":"餵","噜":"嚕","图":"圖","声":"聲","处":"處","备":"備","够":"夠","头":"頭","奖":"獎","学":"學","宝":"寶","实":"實","对":"對","岳":"嶽","师":"師","带":"帶","干":"幹","庄":"莊","库":"庫","开":"開","弃":"棄","张":"張","归":"歸","录":"錄","态":"態","恒":"恆","惊":"驚","戏":"戲","扩":"擴","抢":"搶","护":"護","挂":"掛","挡":"擋","损":"損","捡":"撿","换":"換","摄":"攝","摇":"搖","摊":"攤","撑":"撐","数":"數","斩":"斬","断":"斷","无":"無","时":"時","晒":"曬","机":"機","杂":"雜","条":"條","来":"來","极":"極","枣":"棗","样":"樣","档":"檔","欢":"歡","气":"氣","沟":"溝","没":"沒","沧":"滄","浏":"瀏","涧":"澗","涨":"漲","游":"遊","滚":"滾","满":"滿","灵":"靈","炉":"爐","点":"點","炼":"煉","猫":"貓","现":"現","电":"電","画":"畫","盘":"盤","着":"著","确":"確","礼":"禮","离":"離","种":"種","税":"稅","稳":"穩","笔":"筆","签":"籤","简":"簡","籁":"籟","系":"係","红":"紅","约":"約","级":"級","纪":"紀","纯":"純","纸":"紙","练":"練","细":"細","经":"經","结":"結","给":"給","继":"繼","绩":"績","续":"續","绿":"綠","罗":"羅","胆":"膽","脑":"腦","腊":"臘","艺":"藝","芦":"蘆","药":"藥","葱":"蔥","蓝":"藍","补":"補","见":"見","规":"規","览":"覽","觉":"覺","议":"議","记":"記","设":"設","识":"識","话":"話","语":"語","说":"說","谱":"譜","财":"財","败":"敗","账":"賬","货":"貨","贪":"貪","购":"購","贵":"貴","贷":"貸","费":"費","赌":"賭","赏":"賞","轩":"軒","载":"載","辕":"轅","边":"邊","过":"過","运":"運","还":"還","这":"這","进":"進","连":"連","选":"選","采":"採","里":"裡","鉴":"鑑","针":"針","钢":"鋼","钮":"鈕","钱":"錢","钻":"鑽","铁":"鐵","铜":"銅","铸":"鑄","铺":"鋪","锁":"鎖","锅":"鍋","锋":"鋒","锤":"錘","键":"鍵","镇":"鎮","镖":"鏢","长":"長","门":"門","间":"間","阳":"陽","陨":"隕","险":"險","随":"隨","难":"難","静":"靜","韧":"韌","顶":"頂","项":"項","顾":"顧","额":"額","风":"風","飞":"飛","马":"馬","鱼":"魚","鲲":"鯤","鳞":"鱗","鸟":"鳥","鸡":"雞","鸿":"鴻","黄":"黃","齐":"齊","龙":"龍"};
+const TRAD = {"万":"萬","东":"東","两":"兩","个":"個","么":"麼","乐":"樂","买":"買","于":"於","云":"雲","亿":"億","从":"從","价":"價","优":"優","会":"會","伞":"傘","传":"傳","体":"體","侠":"俠","债":"債","儿":"兒","关":"關","内":"內","军":"軍","冲":"衝","准":"準","凉":"涼","减":"減","几":"機","凤":"鳳","击":"擊","刚":"剛","制":"製","剑":"劍","动":"動","励":"勵","匀":"勻","单":"單","卖":"賣","历":"曆","厨":"廚","参":"參","变":"變","叠":"疊","号":"號","后":"後","吗":"嗎","听":"聽","咸":"鹹","喂":"餵","噜":"嚕","图":"圖","声":"聲","处":"處","备":"備","够":"夠","头":"頭","奖":"獎","学":"學","宝":"寶","实":"實","对":"對","岳":"嶽","师":"師","带":"帶","干":"幹","庄":"莊","库":"庫","开":"開","弃":"棄","张":"張","归":"歸","录":"錄","态":"態","恒":"恆","惊":"驚","戏":"戲","扩":"擴","抢":"搶","护":"護","挂":"掛","挡":"擋","损":"損","捡":"撿","换":"換","摄":"攝","摇":"搖","摊":"攤","撑":"撐","数":"數","斩":"斬","断":"斷","无":"無","时":"時","晒":"曬","机":"機","杂":"雜","条":"條","来":"來","极":"極","枣":"棗","样":"樣","档":"檔","欢":"歡","气":"氣","沟":"溝","没":"沒","沧":"滄","浏":"瀏","涧":"澗","涨":"漲","游":"遊","滚":"滾","满":"滿","灵":"靈","炉":"爐","点":"點","炼":"煉","爱":"愛","猫":"貓","现":"現","电":"電","画":"畫","盘":"盤","着":"著","确":"確","礼":"禮","离":"離","种":"種","税":"稅","稳":"穩","笔":"筆","签":"籤","简":"簡","籁":"籟","系":"係","红":"紅","约":"約","级":"級","纪":"紀","纯":"純","纸":"紙","练":"練","细":"細","经":"經","结":"結","给":"給","继":"繼","绩":"績","续":"續","绿":"綠","罗":"羅","胆":"膽","脑":"腦","腊":"臘","艺":"藝","芦":"蘆","药":"藥","葱":"蔥","蓝":"藍","补":"補","见":"見","规":"規","览":"覽","觉":"覺","议":"議","记":"記","设":"設","识":"識","话":"話","语":"語","说":"說","谱":"譜","财":"財","败":"敗","账":"賬","货":"貨","贪":"貪","购":"購","贵":"貴","贷":"貸","费":"費","赌":"賭","赏":"賞","轩":"軒","载":"載","辕":"轅","边":"邊","过":"過","运":"運","还":"還","这":"這","进":"進","连":"連","选":"選","采":"採","里":"裡","鉴":"鑑","针":"針","钢":"鋼","钮":"鈕","钱":"錢","钻":"鑽","铁":"鐵","铜":"銅","铸":"鑄","铺":"鋪","锁":"鎖","锅":"鍋","锋":"鋒","锤":"錘","键":"鍵","镇":"鎮","镖":"鏢","长":"長","门":"門","间":"間","阳":"陽","陨":"隕","险":"險","随":"隨","难":"難","静":"靜","韧":"韌","顶":"頂","项":"項","顾":"顧","额":"額","风":"風","飞":"飛","马":"馬","鱼":"魚","鲲":"鯤","鳞":"鱗","鸟":"鳥","鸡":"雞","鸿":"鴻","黄":"黃","齐":"齊","龙":"龍"};
 const TRAD_PHRASES = [['鱼干', '魚乾'], ['擀面杖', '擀麵杖'], ['激光', '雷射']]; // Taiwan wording that a per-character table can't express
 function toTrad(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; for (const [a, b] of TRAD_PHRASES) o = o.split(toTradRaw(a)).join(b); return o; }
 function toTradRaw(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; return o; }
@@ -669,7 +669,7 @@ function gameOver(lines, retired) {
   $('#mAgain').onclick = () => { closeSheet(); startRun(); };
   $('#mShop').onclick = () => { closeSheet(); showShop(); };
 }
-// ---------- 橘猫 (the studio's cat): a free, just-for-fun feeding corner. No money involved. ----------
+// ---------- 爱烤火的橘猫 (the studio, Fireside Ginger Cat): a free, just-for-fun feeding corner. No money involved. ----------
 const CAT_SVG = `<svg class="cat" viewBox="0 0 200 190" aria-hidden="true">
   <path class="tail" d="M150 160c30-4 42-30 30-52-6-11-18-8-14 4 6 16-4 30-22 32z" fill="#E8893A"/>
   <ellipse cx="100" cy="140" rx="58" ry="44" fill="#F29A45"/>
@@ -689,11 +689,11 @@ const FISH_SVG = '<svg viewBox="0 0 60 30" aria-hidden="true"><path d="M4 15c10-
 const catLines = () => [T('喵～', 'Meow~'), T('呼噜呼噜……', 'Purr, purr…'), T('还要！', 'More!'), T('橘猫满足地翻了个身。', 'The cat rolls over, very pleased.'), T('橘猫用尾巴拍了拍你的锤子。', 'The cat pats your hammer with its tail.'), T('橘猫把小鱼干叼走藏起来了。', 'The cat carries the fish off to hide it.')];
 function catSheet() {
   const n = () => T('橘猫一共吃了 ' + (meta.catFed || 0) + ' 条小鱼干', 'The cat has eaten ' + (meta.catFed || 0) + ' dried fish');
-  openSheet(`<h2>${T('橘猫工作室', 'Orange Cat Studio')}</h2><div class="catbox" id="catBox">${CAT_SVG}</div>
-    <p class="catline" id="catLine">${T('橘猫在铺子门口晒太阳，看见你手里的小鱼干，眼睛亮了。', 'The cat is sunbathing by the shop door. Its eyes light up when it sees the dried fish in your hand.')}</p>
+  openSheet(`<h2>${T('爱烤火的橘猫', 'Fireside Ginger Cat')}</h2><div class="catbox" id="catBox">${CAT_SVG}</div>
+    <p class="catline" id="catLine">${T('橘猫趴在炉子边烤火，看见你手里的小鱼干，眼睛亮了。', 'The cat is curled up by the forge, warming itself. Its eyes light up when it sees the dried fish in your hand.')}</p>
     <p class="catcount" id="catCount">${n()}</p>
     <div class="btns"><button class="btn" id="catFeed" type="button">${T('投喂一条小鱼干', 'Toss a dried fish')}</button><button class="btn ghost" id="catBack" type="button">${T('回去', 'Back')}</button></div>
-    <p class="tip">${T('完全免费，想喂多少喂多少。这款游戏由橘猫工作室制作。', "It's free. Feed it as much as you like. This game is made by Orange Cat Studio.")}</p>`);
+    <p class="tip">${T('完全免费，想喂多少喂多少。这款游戏由「爱烤火的橘猫」制作。', "It's free. Feed it as much as you like. This game is made by Fireside Ginger Cat.")}</p>`);
   const box = $('#catBox');
   $('#catFeed').onclick = () => {
     ensureAudio();
@@ -769,7 +769,7 @@ function applyStatic() {
   set('#strikeLbl', '锤', 'Strike'); set('#sellLbl', '出售', 'Sell'); set('#storeLbl', '上架', 'Rack');
   set('#mLbl', '剑市 · 现价', 'Blade market · now');
   set('#tTag', '打铁 · 赌运气 · 还高利贷', 'Forge · Gamble · Pay the loan shark');
-  set('#tCat', '橘猫工作室 出品', 'A game by Orange Cat Studio');
+  set('#tCat', '爱烤火的橘猫 出品', 'A game by Fireside Ginger Cat');
   set('#tNew', '开张', 'New run'); set('#tCont', '接着打', 'Continue'); set('#tHelp', '规矩', 'How to play'); set('#tLang', '语言 · Language', 'Language · 语言');
   set('#tShopLbl', '铺子 · 名望', 'Workshop · Fame'); set('#tCodexLbl', '兵器图鉴 ·', 'Weapon codex ·');
   set('#shopH', '铺子', 'Workshop'); set('#sFameLbl', '名望', 'Fame'); set('#shopFoot', '每局结束按撑过的期数和最高卖价得名望。升级永久有效。', 'Each run ends with fame based on periods survived and your best sale. Upgrades are permanent.');
@@ -797,7 +797,7 @@ const shopOpen = () => !!(meta.ends || meta.totalFame > 0 || meta.best.period > 
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false; $('#tShop').hidden = !shopOpen();
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.14 · 存档在这台设备的浏览器里', 'v0.14 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.15 · 存档在这台设备的浏览器里', 'v0.15 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
