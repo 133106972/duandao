@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.8 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.9 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -20,12 +20,13 @@ const TRAD = {"万":"萬","东":"東","两":"兩","个":"個","么":"麼","买":
 const TRAD_PHRASES = [['擀面杖', '擀麵杖'], ['激光', '雷射']]; // Taiwan wording that a per-character table can't express
 function toTrad(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; for (const [a, b] of TRAD_PHRASES) o = o.split(toTradRaw(a)).join(b); return o; }
 function toTradRaw(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; return o; }
-const LANGS = [['zh', '简体中文'], ['zht', '繁體中文'], ['en', 'English'], ['es', 'Español'], ['de', 'Deutsch']];
+const LANGS = [['zh', '简体中文'], ['zht', '繁體中文'], ['en', 'English'], ['es', 'Español'], ['fr', 'Français'], ['pt', 'Português (BR)'], ['de', 'Deutsch'], ['ru', 'Русский'], ['ja', '日本語'], ['ko', '한국어']];
 // Spanish / German: English text is looked up as a template. Names and numbers are masked first, so
 // "Sold +5 Leek for 12" and "Sold +9 Abacus for 3.4K" share one entry: "Sold {0} {1} for {2}". Tables live in i18n.js.
 const I18N = window.I18N || {};
-const isLatin = () => LANG === 'en' || LANG === 'es' || LANG === 'de';
-const NUM_RE = /[+\-×]?\d+(?:[.,]\d+)*(?:Qa|Qi|Sx|Sp|Oc|No|Dc|[KMBT](?![a-z])|[a-z]{2}(?![a-zA-Z]))?%?/g;
+const isTbl = () => !!(I18N[LANG] && I18N[LANG].t); // languages translated from English through i18n.js
+const isLatin = () => LANG === 'en' || ['es', 'fr', 'pt', 'de', 'ru'].includes(LANG);
+const NUM_RE = /[+\-×]?\d+(?:[.,]\d+)*(?:Qa|Qi|Sx|Sp|Oc|No|Dc|[KMBT](?![a-z])|[a-z]{2}(?![a-zA-Z])|(?:[万億兆京垓秭穣溝澗正載極만억조경해자양구간정재극]|恒河沙|阿僧祇|那由他|不可思議|無量大数|항하사|아승기|나유타|불가사의|무량대수)+)?%?/g;
 let ENT = null; // [[name as it may appear, translation]] longest first, per language
 function entities() {
   if (ENT && ENT.lang === LANG) return ENT.list;
@@ -37,7 +38,7 @@ function entities() {
 }
 function maskKey(str) {
   // markers use private-use characters (not digits) so number masking can't touch them
-  const vals = [], mark = (v) => '\u0001' + String.fromCharCode(0xE000 + vals.push(v) - 1) + '\u0002'; let m = String(str).replace(/[«„]/g, '"').replace(/[»“]/g, '"');
+  const vals = [], mark = (v) => '\u0001' + String.fromCharCode(0xE000 + vals.push(v) - 1) + '\u0002'; let m = String(str).replace(/[«„「]\s*/g, '"').replace(/\s*[»“」]/g, '"');
   for (const [k, v] of entities()) if (m.includes(k)) m = m.split(k).join(mark(v));
   m = m.replace(NUM_RE, (x) => mark(x));
   const order = []; const key = m.replace(/\u0001([\uE000-\uF8FF])\u0002/g, (_, c) => '{' + (order.push(c.charCodeAt(0) - 0xE000) - 1) + '}');
@@ -46,13 +47,13 @@ function maskKey(str) {
 function trX(str) {
   const tb = I18N[LANG]; if (!tb || str == null) return str;
   const { key, vals } = maskKey(str), tpl = tb.t[key];
-  if (window.__i18nMiss && tpl == null && key !== '{0}' && key) window.__i18nMiss(key);
+  if (window.__i18nMiss && tpl == null && key !== '{0}' && key) window.__i18nMiss(key, str);
   return (tpl == null ? key : tpl).replace(/\{(\d+)\}/g, (_, j) => vals[+j] ?? '');
 }
 const nm = (en) => ((I18N[LANG] && I18N[LANG].n[en]) || en);
-const T = (zh, en) => (LANG === 'en' ? (window.__i18nCollect && window.__i18nCollect(en), en) : LANG === 'zht' ? toTrad(zh) : LANG === 'es' || LANG === 'de' ? trX(en) : zh);
-const N = (o) => (LANG === 'en' && o.en ? o.en : LANG === 'zht' ? toTrad(o.name) : (LANG === 'es' || LANG === 'de') && o.en ? nm(o.en) : o.name);
-const D = (o) => (LANG === 'en' && o.descEn ? o.descEn : LANG === 'zht' ? toTrad(o.desc) : (LANG === 'es' || LANG === 'de') && o.descEn ? trX(o.descEn) : o.desc);
+const T = (zh, en) => (LANG === 'en' ? (window.__i18nCollect && window.__i18nCollect(en), en) : LANG === 'zht' ? toTrad(zh) : isTbl() ? trX(en) : zh);
+const N = (o) => (LANG === 'en' && o.en ? o.en : LANG === 'zht' ? toTrad(o.name) : (isTbl()) && o.en ? nm(o.en) : o.name);
+const D = (o) => (LANG === 'en' && o.descEn ? o.descEn : LANG === 'zht' ? toTrad(o.desc) : (isTbl()) && o.descEn ? trX(o.descEn) : o.desc);
 function inLang(l, fn) { const cur = LANG; LANG = l; try { return fn(); } finally { LANG = cur; } }
 
 // ---------- numbers ----------
@@ -71,10 +72,16 @@ function fmtEn(n) {
   if (k < EN_UNITS.length) return short(x) + EN_UNITS[k];
   const j = k - EN_UNITS.length; return short(x) + String.fromCharCode(97 + Math.floor(j / 26) % 26) + String.fromCharCode(97 + j % 26);
 }
+const MYRIAD = { ja: ['万', '億', '兆', '京', '垓', '秭', '穣', '溝', '澗', '正', '載', '極', '恒河沙', '阿僧祇', '那由他', '不可思議', '無量大数'], ko: ['만', '억', '조', '경', '해', '자', '양', '구', '간', '정', '재', '극', '항하사', '아승기', '나유타', '불가사의', '무량대수'] };
+function fmtMy(n, u) {
+  if (n >= 1e72) return fmtMy(n / 1e68, u) + u[16];
+  for (let i = 16; i >= 0; i--) { const v = Math.pow(10, 4 * (i + 1)); if (n >= v) return short(n / v) + u[i]; }
+  return Math.floor(n).toLocaleString('en-US');
+}
 function fmt(n) {
   if (!isFinite(n)) return n < 0 ? T('-不可说', '-∞') : T('不可说不可说', 'Beyond Words');
   if (n < 0) return '-' + fmt(-n);
-  return isLatin() ? fmtEn(n) : LANG === 'zht' ? toTrad(fmtZh(n)) : fmtZh(n);
+  return MYRIAD[LANG] ? fmtMy(n, MYRIAD[LANG]) : isLatin() ? fmtEn(n) : LANG === 'zht' ? toTrad(fmtZh(n)) : fmtZh(n);
 }
 const pct = (x) => (x * 100 >= 10 || x === 0 ? (x * 100).toFixed(0) : (x * 100).toFixed(1)) + '%';
 
@@ -242,8 +249,9 @@ if (!meta.codex) meta.codex = {};
 if (!meta.forged) meta.forged = {};
 for (const k of Object.keys(meta.codex)) if (!WP[k]) delete meta.codex[k];
 if (meta.vibe === undefined) meta.vibe = true;
-{ const nl = (navigator.language || 'zh').toLowerCase(); LANG = meta.lang || (/^zh-(tw|hk|mo|hant)/.test(nl) ? 'zht' : nl.startsWith('zh') ? 'zh' : nl.startsWith('es') && I18N.es ? 'es' : nl.startsWith('de') && I18N.de ? 'de' : 'en'); }
+{ const nl = (navigator.language || 'zh').toLowerCase(); const two = nl.slice(0, 2); LANG = meta.lang || (/^zh-(tw|hk|mo|hant)/.test(nl) ? 'zht' : two === 'zh' ? 'zh' : I18N[two] ? two : 'en'); }
 { const q = new URLSearchParams(location.search).get('lang'); if (LANGS.some(([k]) => k === q)) LANG = q; }
+if (!['zh', 'zht', 'en'].includes(LANG) && !(I18N[LANG] && I18N[LANG].t)) LANG = 'en';
 let run = DEMO ? null : store.get('ycmm-run', null);
 if (run && run.v !== SAVE_V) run = null;
 if (run) { run.boost = run.boost || { stam: 0, succ: 0, luck: 0 }; run.loan = run.loan || 0; run.fire = run.fire || 0; run.fever = run.fever || 0; }
@@ -660,13 +668,13 @@ function addLog(t, cls = '') {
   const e = typeof t === 'function' ? [inLang('zh', t), inLang('en', t), cls, Object.fromEntries(Object.keys(I18N).map((l) => [l, inLang(l, t)]))] : [t, t, cls];
   run.log.unshift(e); run.log.length = Math.min(run.log.length, 5);
 }
-const logText = (e) => { const [zh, en] = e.length >= 3 ? e : [e[0], e[0]]; return LANG === 'en' ? en : LANG === 'zht' ? toTrad(zh) : LANG === 'es' || LANG === 'de' ? (e[3] && e[3][LANG]) || trX(en) : zh; };
+const logText = (e) => { const [zh, en] = e.length >= 3 ? e : [e[0], e[0]]; return LANG === 'en' ? en : LANG === 'zht' ? toTrad(zh) : isTbl() ? (e[3] && e[3][LANG]) || trX(en) : zh; };
 let tab = 'market';
 function setTab(t) { tab = t; document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t)); ['rack', 'bag', 'market', 'seals'].forEach((k) => { $('#pane-' + k).hidden = k !== t; }); if (run) render(); }
 document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 // static page text
 function applyStatic() {
-  document.documentElement.lang = isLatin() ? LANG : LANG === 'zht' ? 'zh-Hant' : 'zh-CN';
+  document.documentElement.lang = LANG === 'zht' ? 'zh-Hant' : LANG === 'zh' ? 'zh-CN' : LANG === 'pt' ? 'pt-BR' : LANG;
   const rs = document.documentElement.style;
   if (LANG === 'zht') {
     if (!$('#tcfonts')) { const l = document.createElement('link'); l.id = 'tcfonts'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap'; document.head.appendChild(l); }
@@ -683,7 +691,7 @@ function applyStatic() {
   set('#shopH', '铺子', 'Workshop'); set('#sFameLbl', '名望', 'Fame'); set('#shopFoot', '每局结束按撑过的期数和最高卖价得名望。升级永久有效。', 'Each run ends with fame based on periods survived and your best sale. Upgrades are permanent.');
   set('#secMat', '料子', 'Materials'); set('#secUpg', '手艺', 'Skills'); set('#shopBack', '回去', 'Back');
   set('#codexFoot', '打出过的兵器会记在这里。收集得越多，铺子的永久加成越多。', 'Every weapon you forge is recorded here. Collect more for permanent bonuses.'); set('#codexBack', '回去', 'Back');
-  const en = isLatin(), logo = $('.logo'); logo.textContent = T('一锤子买卖', 'One Hammer Deal');
+  const en = !['zh', 'zht'].includes(LANG), logo = $('.logo'); logo.textContent = T('一锤子买卖', 'One Hammer Deal');
   Object.assign(logo.style, { fontFamily: en || LANG === 'zht' ? 'var(--serif)' : '', fontSize: en ? 'clamp(34px,9.5vw,64px)' : '', whiteSpace: en ? 'normal' : '', fontWeight: en ? '900' : '' });
   $('#tTag').style.letterSpacing = en ? '.08em' : '';
   $('#strikeLbl').style.font = en ? '900 26px var(--serif)' : '';
@@ -704,7 +712,7 @@ function langSheet(back) {
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false;
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.8 · 存档在这台设备的浏览器里', 'v0.8 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.9 · 存档在这台设备的浏览器里', 'v0.9 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -737,13 +745,39 @@ function showCodex() {
         const fm = has1 ? `<span class="forms">${FORMS[x.id].map((f, i) => `<i class="${lv >= FORM_LV[i] ? 'on' : ''}${i === 3 ? ' top' : ''}" title="+${FORM_LV[i]}">${lv >= FORM_LV[i] ? T(f[0], f[1]) : '+' + FORM_LV[i]}</i>`).join('')}</span>` : '';
         return `<div class="cx${has1 ? '' : ' lock'}"><canvas data-shape="${x.id}"></canvas><b>${has1 ? N(x) : '???'}</b><span class="stars">${has1 ? stars(lv) : ''}</span>${fm}<span>${has1 ? T('最高 +' + lv + ' · 打过 ' + (meta.forged[x.id] || 1) + ' 件', 'Best +' + lv + ' · forged ' + (meta.forged[x.id] || 1)) : T('还没打出来过', 'Not found yet')}</span>${has1 ? `<span>${D(x)}</span>` : ''}</div>`; }).join('') + '</div></div>';
   }).join('') + `<p class="foot">${T('★ 打到 +5　★★ 打到 +10　★★★ 打到 +20。每件兵器打到 +25、+50、+75 会进化成新形态，最后一次变化最大。', '★ reach +5　★★ reach +10　★★★ reach +20. Every weapon evolves at +25, +50 and +75; the last change is the biggest.')}</p>`;
+  $('#codex').querySelectorAll('.cx').forEach((el, i) => { const id = el.querySelector('canvas').dataset.shape; el.dataset.id = id; el.tabIndex = 0; el.setAttribute('role', 'button'); });
   $('#codex').querySelectorAll('canvas').forEach((c) => { const id = c.dataset.shape, got = meta.codex[id] !== undefined; drawIcon(c, { mat: 'steel', shape: id, level: got ? Math.min(meta.codex[id], 25) : 0, mul: 1 }, !got); });
+}
+$('#codex').addEventListener('click', (e) => { const el = e.target.closest('.cx[data-id]'); if (el) evoSheet(el.dataset.id); });
+$('#codex').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const el = e.target.closest('.cx[data-id]'); if (el) evoSheet(el.dataset.id); } });
+// evolution tree for one weapon: its four forms, what unlocks each, and how far you've got
+let evoRaf = 0;
+function evoSheet(id) {
+  const w = WP[id], got = meta.codex[id] !== undefined, best = meta.codex[id] || 0, rq = RARITY[w.rar];
+  const rows = FORMS[id].map((f, i) => {
+    const open = got && best >= FORM_LV[i], next = !open && (i === 0 || best >= FORM_LV[i - 1]);
+    return `<div class="evo${open ? ' open' : ''}${i === 3 ? ' top' : ''}"><canvas data-i="${i}"></canvas><div class="evo-t"><b>${open ? T(f[0], f[1]) : '？？？'}</b><span>${T(STAGES[i][0], STAGES[i][1])} · +${FORM_LV[i]}</span><span class="${open ? 'ok' : ''}">${open ? T('已解锁', 'Unlocked') : got && next ? T('还差 ' + (FORM_LV[i] - best) + ' 级', (FORM_LV[i] - best) + ' levels to go') : T('未解锁', 'Locked')}</span></div></div>${i < 3 ? '<div class="evo-arrow">↓</div>' : ''}`;
+  }).join('');
+  openSheet(`<h2><span class="rq" style="color:${rq.color};border-color:${rq.color}">${isLatin() || isTbl() ? N(rq) : RK(rq) + '·' + N(rq)}</span>${got ? N(w) : '？？？'}</h2>
+    <p>${got ? D(w) : T('还没打出来过。先在砧上遇到它。', 'Not found yet. You need to get it on the anvil first.')}</p>
+    ${got ? linesHtml([[T('最高等级', 'Best level'), '+' + best], [T('打过', 'Forged'), String(meta.forged[id] || 1)], [T('稀有度', 'Rarity'), N(rq)]]) : ''}
+    <div class="evotree">${rows}</div>
+    <div class="btns"><button class="btn ghost" id="evoBack" type="button">${T('回去', 'Back')}</button></div>`);
+  $('#evoBack').onclick = closeSheet;
+  const cvs = [...$('#sheet').querySelectorAll('.evo canvas')];
+  cancelAnimationFrame(evoRaf);
+  const draw = (t) => {
+    if ($('#modal').hidden || !cvs[0].isConnected) return;
+    cvs.forEach((c) => { const i = +c.dataset.i, open = got && best >= FORM_LV[i]; drawEvo(c, { mat: 'steel', shape: id, level: Math.max(FORM_LV[i], i === 0 ? 6 : FORM_LV[i]), mul: 1 }, !open, t); });
+    evoRaf = requestAnimationFrame(draw);
+  };
+  evoRaf = requestAnimationFrame(draw);
 }
 $('#codexBack').onclick = () => { if (run && $('#titleScreen').dataset.from === 'game') { hideScreens(); render(); } else showTitle(); };
 function showHelp() {
   meta.seenHelp = true; saveMeta();
   const c = (col, t) => `<b style="color:${col}">${t}</b>`;
-  const items = (LANG === 'es' || LANG === 'de') && I18N[LANG] && I18N[LANG].help ? I18N[LANG].help(c, DAYS) : isLatin() ? [
+  const items = (isTbl()) && I18N[LANG] && I18N[LANG].help ? I18N[LANG].help(c, DAYS) : isLatin() ? [
     `You run a smithy that can forge anything: swords, cleavers, salted fish, power drills… and you owe the bank. Every ${DAYS} days a payment is due, and each one is bigger.`,
     `Tap ${c('#FFF6E0', 'Strike')} to hammer (1 stamina). The needle on the rainbow bar shows where the roll landed: ${c('var(--o-succ)', 'success')} +1, ${c('var(--o-great)', 'great')} +2, damage -1, or the item ${c('var(--o-brk)', 'breaks')}.`,
     'Higher levels are worth more (+60% per level) and break more easily. There is no level cap.',
@@ -1143,6 +1177,13 @@ function drawWings(c, cx, cy, L, u, t, alpha) { // ascended forms: two fans of l
     c.fillStyle = g; c.beginPath(); c.moveTo(cx, cy - u); c.quadraticCurveTo((cx + x2) / 2 + side * u * 1.2, (cy + y2) / 2 - u, x2, y2); c.quadraticCurveTo((cx + x2) / 2, (cy + y2) / 2 + u * 0.8, cx, cy - u * 0.4); c.fill();
   }
   c.restore();
+}
+function drawEvo(cvs, s, sil, t) { // bigger, animated rendering with wings and runes, for the evolution tree
+  const r = cvs.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2), w = r.width || 300, h = r.height || 96;
+  if (cvs.width !== Math.round(w * d)) { cvs.width = Math.round(w * d); cvs.height = Math.round(h * d); }
+  const c = cvs.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, w, h);
+  const ext = WP[s.shape].ext, L = w * 0.82, u = Math.max(3, Math.min(L * 0.06, (h * 0.6) / (ext[0] + ext[1])));
+  renderWeapon(c, s, (w - L) / 2, h / 2 + (ext[0] - ext[1]) * u / 2 + (stageOf(s.level) >= 3 && !sil ? u * 0.8 : 0), L, u, { sil, glow: 0.6, t, dpr: d });
 }
 function drawIcon(cvs, s, sil = false) {
   if (!cvs) return;

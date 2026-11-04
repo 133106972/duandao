@@ -4,6 +4,8 @@
 
 **在线玩**：开启 GitHub Pages 后地址是 `https://133106972.github.io/duandao/`，首页能选任意一个版本玩。
 
+**单文件版**：`docs/one-hammer-deal.html` 是整个游戏打包成的一个文件，双击就能玩，不联网也行，可以直接发给别人（微信、QQ 发文件都可以）。
+
 ## 目录
 
 | 位置 | 内容 |
@@ -25,7 +27,7 @@ cd game && python3 -m http.server 8766
 ## 发一个新版本
 
 1. 改 `game/` 里的代码。
-2. 把 `game/` 复制成 `docs/v0.X/`，在 `docs/index.html` 里加一行更新说明。
+2. 把 `game/` 复制成 `docs/v0.X/`，在 `docs/index.html` 里加一行更新说明；单文件版用 `tools/build-standalone.py` 重新生成。
 3. 提交并推送，网站会自动更新。
 
 ## 开启网站（只需要一次）
