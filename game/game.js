@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.9 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.10 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -16,7 +16,7 @@ const FIRE_MAX = 10, FEVER_LEN = 8, FEVER_GREAT = 0.15; // full fire (10) starts
 // every visible string goes through T(zh, en); data tables carry `en` / `descEn` fields
 // 繁體 is generated from the Simplified text with this character table (built with OpenCC s2twp, see DESIGN.md)
 let LANG = 'zh';
-const TRAD = {"万":"萬","东":"東","两":"兩","个":"個","么":"麼","买":"買","于":"於","云":"雲","亿":"億","从":"從","价":"價","优":"優","会":"會","伞":"傘","传":"傳","体":"體","侠":"俠","债":"債","儿":"兒","关":"關","内":"內","军":"軍","准":"準","减":"減","几":"機","击":"擊","剑":"劍","动":"動","励":"勵","匀":"勻","单":"單","卖":"賣","历":"曆","厨":"廚","参":"參","变":"變","叠":"疊","号":"號","后":"後","听":"聽","咸":"鹹","图":"圖","声":"聲","备":"備","够":"夠","头":"頭","奖":"獎","学":"學","宝":"寶","实":"實","对":"對","岳":"嶽","师":"師","带":"帶","干":"幹","庄":"莊","库":"庫","开":"開","弃":"棄","张":"張","归":"歸","录":"錄","恒":"恆","惊":"驚","扩":"擴","抢":"搶","护":"護","挂":"掛","挡":"擋","损":"損","捡":"撿","换":"換","撑":"撐","数":"數","断":"斷","无":"無","时":"時","机":"機","杂":"雜","条":"條","来":"來","极":"極","样":"樣","档":"檔","气":"氣","沟":"溝","没":"沒","沧":"滄","浏":"瀏","涧":"澗","涨":"漲","满":"滿","炉":"爐","点":"點","炼":"煉","现":"現","电":"電","盘":"盤","着":"著","确":"確","礼":"禮","离":"離","种":"種","税":"稅","稳":"穩","签":"籤","系":"係","红":"紅","约":"約","级":"級","纪":"紀","纯":"純","练":"練","细":"細","经":"經","结":"結","给":"給","绩":"績","续":"續","绿":"綠","胆":"膽","脑":"腦","艺":"藝","芦":"蘆","葱":"蔥","蓝":"藍","补":"補","见":"見","规":"規","览":"覽","觉":"覺","议":"議","记":"記","设":"設","识":"識","话":"話","语":"語","说":"說","谱":"譜","财":"財","账":"賬","货":"貨","贪":"貪","购":"購","贷":"貸","赌":"賭","赏":"賞","载":"載","边":"邊","过":"過","运":"運","还":"還","这":"這","进":"進","连":"連","选":"選","采":"採","里":"裡","鉴":"鑑","针":"針","钢":"鋼","钱":"錢","钻":"鑽","铁":"鐵","铜":"銅","铸":"鑄","铺":"鋪","锅":"鍋","锋":"鋒","锤":"錘","键":"鍵","镇":"鎮","镖":"鏢","长":"長","门":"門","间":"間","陨":"隕","险":"險","随":"隨","静":"靜","韧":"韌","项":"項","顾":"顧","风":"風","飞":"飛","马":"馬","鱼":"魚","鳞":"鱗","鸡":"雞","鸿":"鴻","黄":"黃","齐":"齊","龙":"龍"};
+const TRAD = {"万":"萬","东":"東","两":"兩","个":"個","么":"麼","乐":"樂","买":"買","于":"於","云":"雲","亿":"億","从":"從","价":"價","优":"優","会":"會","伞":"傘","传":"傳","体":"體","侠":"俠","债":"債","儿":"兒","关":"關","内":"內","军":"軍","冲":"衝","准":"準","凉":"涼","减":"減","几":"機","凤":"鳳","击":"擊","刚":"剛","剑":"劍","动":"動","励":"勵","匀":"勻","单":"單","卖":"賣","历":"曆","厨":"廚","参":"參","变":"變","叠":"疊","号":"號","后":"後","听":"聽","咸":"鹹","图":"圖","声":"聲","处":"處","备":"備","够":"夠","头":"頭","奖":"獎","学":"學","宝":"寶","实":"實","对":"對","岳":"嶽","师":"師","带":"帶","干":"幹","庄":"莊","库":"庫","开":"開","弃":"棄","张":"張","归":"歸","录":"錄","态":"態","恒":"恆","惊":"驚","扩":"擴","抢":"搶","护":"護","挂":"掛","挡":"擋","损":"損","捡":"撿","换":"換","摇":"搖","撑":"撐","数":"數","斩":"斬","断":"斷","无":"無","时":"時","机":"機","杂":"雜","条":"條","来":"來","极":"極","枣":"棗","样":"樣","档":"檔","气":"氣","沟":"溝","没":"沒","沧":"滄","浏":"瀏","涧":"澗","涨":"漲","滚":"滾","满":"滿","灵":"靈","炉":"爐","点":"點","炼":"煉","现":"現","电":"電","画":"畫","盘":"盤","着":"著","确":"確","礼":"禮","离":"離","种":"種","税":"稅","稳":"穩","笔":"筆","签":"籤","简":"簡","籁":"籟","系":"係","红":"紅","约":"約","级":"級","纪":"紀","纯":"純","纸":"紙","练":"練","细":"細","经":"經","结":"結","给":"給","继":"繼","绩":"績","续":"續","绿":"綠","罗":"羅","胆":"膽","脑":"腦","腊":"臘","艺":"藝","芦":"蘆","药":"藥","葱":"蔥","蓝":"藍","补":"補","见":"見","规":"規","览":"覽","觉":"覺","议":"議","记":"記","设":"設","识":"識","话":"話","语":"語","说":"說","谱":"譜","财":"財","账":"賬","货":"貨","贪":"貪","购":"購","贷":"貸","费":"費","赌":"賭","赏":"賞","轩":"軒","载":"載","辕":"轅","边":"邊","过":"過","运":"運","还":"還","这":"這","进":"進","连":"連","选":"選","采":"採","里":"裡","鉴":"鑑","针":"針","钢":"鋼","钮":"鈕","钱":"錢","钻":"鑽","铁":"鐵","铜":"銅","铸":"鑄","铺":"鋪","锁":"鎖","锅":"鍋","锋":"鋒","锤":"錘","键":"鍵","镇":"鎮","镖":"鏢","长":"長","门":"門","间":"間","陨":"隕","险":"險","随":"隨","静":"靜","韧":"韌","项":"項","顾":"顧","额":"額","风":"風","飞":"飛","马":"馬","鱼":"魚","鲲":"鯤","鳞":"鱗","鸟":"鳥","鸡":"雞","鸿":"鴻","黄":"黃","齐":"齊","龙":"龍"};
 const TRAD_PHRASES = [['擀面杖', '擀麵杖'], ['激光', '雷射']]; // Taiwan wording that a per-character table can't express
 function toTrad(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; for (const [a, b] of TRAD_PHRASES) o = o.split(toTradRaw(a)).join(b); return o; }
 function toTradRaw(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; return o; }
@@ -243,7 +243,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
   del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } },
 };
-const META_DEFAULT = { fame: 0, totalFame: 0, upg: {}, mats: ['iron'], mat: 'iron', runs: 0, best: { period: 0, level: 0, sale: 0 }, codex: {}, forged: {}, seenHelp: false, muted: false, vibe: true, lang: null };
+const META_DEFAULT = { fame: 0, totalFame: 0, upg: {}, mats: ['iron'], mat: 'iron', runs: 0, best: { period: 0, level: 0, sale: 0 }, codex: {}, forged: {}, seenHelp: false, tutDone: false, muted: false, vibe: true, lang: null };
 let meta = Object.assign({}, META_DEFAULT, DEMO ? {} : store.get('ycmm-meta', {}));
 if (!meta.codex) meta.codex = {};
 if (!meta.forged) meta.forged = {};
@@ -648,7 +648,7 @@ function gameOver(lines) {
 }
 function startRun() {
   const owned = MATS.filter((m) => meta.mats.includes(m.id));
-  const begin = (id) => { meta.mat = id; saveMeta(); closeSheet(); hideScreens(); newRun(id); setTab('market'); render(); if (!meta.seenHelp) showHelp(); };
+  const begin = (id) => { meta.mat = id; saveMeta(); closeSheet(); hideScreens(); newRun(id); setTab('market'); render(); if (tutForce || (!meta.tutDone && !meta.seenHelp)) { tutForce = false; startTut(); } else if (!meta.seenHelp) showHelp(); };
   if (owned.length < 2) return begin('iron');
   openSheet(`<h2>${T('今天打什么料？', 'Which material today?')}</h2><div class="cards">${owned.map((m) => `<button class="card" type="button" data-id="${m.id}"><span class="seal" style="background:${m.color};color:#120E0C">${N(m)[0]}</span><b>${N(m)} · ${T('底价', 'base')} ${m.base}</b><span>${D(m)}</span></button>`).join('')}</div>`);
   $('#sheet').querySelectorAll('.card').forEach((b) => b.onclick = () => begin(b.dataset.id));
@@ -712,7 +712,7 @@ function langSheet(back) {
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false;
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.9 · 存档在这台设备的浏览器里', 'v0.9 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.10 · 存档在这台设备的浏览器里', 'v0.10 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -777,30 +777,150 @@ $('#codexBack').onclick = () => { if (run && $('#titleScreen').dataset.from === 
 function showHelp() {
   meta.seenHelp = true; saveMeta();
   const c = (col, t) => `<b style="color:${col}">${t}</b>`;
+  // one short line per rule; the evolution example below is drawn, not described
   const items = (isTbl()) && I18N[LANG] && I18N[LANG].help ? I18N[LANG].help(c, DAYS) : isLatin() ? [
-    `You run a smithy that can forge anything: swords, cleavers, salted fish, power drills… and you owe the bank. Every ${DAYS} days a payment is due, and each one is bigger.`,
-    `Tap ${c('#FFF6E0', 'Strike')} to hammer (1 stamina). The needle on the rainbow bar shows where the roll landed: ${c('var(--o-succ)', 'success')} +1, ${c('var(--o-great)', 'great')} +2, damage -1, or the item ${c('var(--o-brk)', 'breaks')}.`,
-    'Higher levels are worth more (+60% per level) and break more easily. There is no level cap.',
-    'The blade price moves with every strike. Sleeping closes the day; tomorrow can open higher or lower. Sale price = value × current price.',
-    `Successes fill the ${c('#FFD23F', 'fire meter')}. At 10 you enter ${c('#FFD23F', 'Fever')}: 8 strikes that cost no stamina with +15% great success. The first 7 can't break or get damaged; ${c('#FF6A4D', 'the last one can')}, so decide whether to push your luck.`,
-    'Hang items on the rack and come back with Wards or Heaven Hammers (they stack: one per strike). Small items can be smelted into big ones. If something breaks, a Regret Pill brings it back.',
-    'Every weapon evolves at +25, +50 and +75: new name, new look. The last change (+75) is the biggest.',
-    'If you can’t pay, the collector takes items from the rack first. After every payment you pick a seal and visit the Bazaar to spend spare gold, or borrow: the bigger the loan, the higher the interest.',
-    `20 weapons in 5 rarities: ${c('#E4DED3', 'white')} · ${c('#5FD068', 'green')} · ${c('#4FA6FF', 'blue')} · ${c('#F5C542', 'gold')} · ${c('#FF4D4D', 'red')}. Collecting them gives permanent bonuses (Dex, top right).`,
+    `Tap ${c('#FFF6E0', 'Strike')}: the item may level up… or break.`,
+    `The needle on the rainbow bar is your result: ${c('var(--o-succ)', 'success')} +1, ${c('var(--o-great)', 'great')} +2, ${c('var(--o-brk)', 'break')}.`,
+    'Higher level = worth more, breaks easier. No level cap.',
+    'The price moves with every strike. Sell high.',
+    `Pay the bank every ${DAYS} days, or lose the shop.`,
+    `${c('#FFD23F', 'Fire')} full = ${c('#FFD23F', 'Fever')}: 8 free strikes. ${c('#FF6A4D', 'The last one can break.')}`,
+    'Rack: store items. Regret Pill: undo a break.',
+    'Weapons evolve at +25, +50 and +75:',
+    `20 weapons, 5 rarities: ${c('#E4DED3', 'white')} · ${c('#5FD068', 'green')} · ${c('#4FA6FF', 'blue')} · ${c('#F5C542', 'gold')} · ${c('#FF4D4D', 'red')}. Collect them for permanent bonuses.`,
   ] : [
-    `你开了间铁匠铺，什么都能打：剑、菜刀、咸鱼、电钻……欠了钱庄的钱，每 ${DAYS} 天还一期，一期比一期多。`,
-    `点「锤」打铁，每锤花 1 点体力。彩虹条上的指针落在哪，结果就是哪：${c('var(--o-succ)', '成功')} +1、${c('var(--o-great)', '大成功')} +2，也可能受损 -1，甚至${c('var(--o-brk)', '碎掉')}。`,
-    '等级越高越值钱（每级涨 60%），也越容易碎。等级没有上限，数字一直往上走：万、亿、兆……恒河沙、阿僧祇、那由他、不可思议、无量大数。',
-    '剑价每锤都在跳，睡一觉收盘，第二天跳空开盘。卖价 = 估价 × 现价，看准了再卖。',
-    `每次成功给${c('#FFD23F', '火候')}加一格（大成功加两格，受损扣两格，碎了清零）。满 10 格进入${c('#FFD23F', '上头时刻')}：接下来 8 锤不花体力、大成功率 +15%，前 7 锤不会碎也不会受损；${c('#FF6A4D', '最后一锤照常会碎')}，要不要赌你自己定。`,
-    '东西可以挂上剑架存着，等买到护剑符、天工锤再拿下来接着打（这些道具可以叠加，用几个管几锤）；小件也能熔进大件里。碎了先别急，背包里有后悔药就能找回来。',
-    '每件兵器打到 +25、+50、+75 会进化成新形态，名字和样子都会变，最后一次（+75）变化最大。',
-    '还款日钱不够，剑架上的东西会先被拿去抵债。每还清一期挑一本秘籍，再逛一次集市，把多出来的金子花掉；缺钱也能在集市借贷，借得越多利息越高。',
-    `一共 20 种兵器，分 5 档：${c('#E4DED3', '白')} · ${c('#5FD068', '绿')} · ${c('#4FA6FF', '蓝')} · ${c('#F5C542', '金')} · ${c('#FF4D4D', '红')}，收进图鉴（右上角「鉴」）有永久加成。`,
+    `点「${c('#FFF6E0', '锤')}」打铁：可能升级，也可能碎。`,
+    `彩虹条上的指针就是结果：${c('var(--o-succ)', '成功')} +1、${c('var(--o-great)', '大成功')} +2、${c('var(--o-brk)', '碎')}。`,
+    '等级越高越值钱，也越容易碎。没有上限。',
+    '剑价每锤都在跳，涨了再卖。',
+    `每 ${DAYS} 天还一期债，还不上铺子就倒。`,
+    `${c('#FFD23F', '火候')}满 10 格 = ${c('#FFD23F', '上头时刻')}：8 锤免费，${c('#FF6A4D', '最后一锤可能碎')}。`,
+    '剑架能存剑，后悔药能救回碎掉的剑。',
+    '兵器打到 +25、+50、+75 会进化：',
+    `20 种兵器 5 档：${c('#E4DED3', '白')} · ${c('#5FD068', '绿')} · ${c('#4FA6FF', '蓝')} · ${c('#F5C542', '金')} · ${c('#FF4D4D', '红')}，集齐有永久加成。`,
   ];
-  openSheet(`<h2>${T('规矩', 'How to play')}</h2><ol class="help">${items.map((x) => `<li>${LANG === 'zht' ? toTrad(x) : x}</li>`).join('')}</ol><p>${T('电脑上：空格 = 锤，S = 出售，A = 上架，E = 睡觉', 'Keyboard: Space = strike, S = sell, A = rack, E = sleep')}</p><div class="btns"><button class="btn" id="mOk" type="button">${T('开干', "Let's go")}</button></div>`);
+  const li = items.map((x, i) => `<li>${LANG === 'zht' ? toTrad(x) : x}${i === 7 ? evoStripHtml() : ''}</li>`);
+  openSheet(`<h2>${T('规矩', 'How to play')}</h2><ol class="help">${li.join('')}</ol><p class="keys">${T('电脑上：空格 = 锤，S = 出售，A = 上架，E = 睡觉', 'Keyboard: Space = strike, S = sell, A = rack, E = sleep')}</p><div class="btns"><button class="btn" id="mOk" type="button">${T('开干', "Let's go")}</button><button class="btn ghost" id="mTut" type="button">${T('重看新手教程', 'Replay tutorial')}</button></div>`);
+  startEvoStrip($('#sheet'));
   $('#mOk').onclick = closeSheet;
+  $('#mTut').onclick = () => { closeSheet(); if (run) { hideScreens(); render(); startTut(); } else { tutForce = true; startRun(); } };
 }
+
+// the salted-fish example: four forms, one per 25 levels (used by the tutorial and the rules)
+const EVO_DEMO = 'yu';
+function evoStripHtml() {
+  return `<div class="estrip">${FORM_LV.map((lv, i) => `${i ? '<i class="earr">↓</i>' : ''}<div class="erow"><b class="elv">+${lv}</b><canvas data-i="${i}"></canvas><span>${formName(EVO_DEMO, lv)}</span></div>`).join('')}</div>`;
+}
+let stripRaf = 0;
+function startEvoStrip(root) {
+  cancelAnimationFrame(stripRaf);
+  const cvs = [...root.querySelectorAll('.estrip canvas')];
+  const draw = (t) => {
+    if (!cvs.length || !cvs[0].isConnected) return;
+    cvs.forEach((c) => { const i = +c.dataset.i; drawEvo(c, { mat: 'steel', shape: EVO_DEMO, level: i ? FORM_LV[i] : 6, mul: 1 }, false, t); });
+    stripRaf = requestAnimationFrame(draw);
+  };
+  stripRaf = requestAnimationFrame(draw);
+}
+
+// ---------- first-run tutorial: a pointing hand and one short line per step; can be skipped ----------
+let tut = null, tutForce = false;
+const HAND_SVG = '<svg viewBox="0 0 64 72" width="54" height="61" aria-hidden="true"><g fill="#FFF6E0" stroke="#1A0E06" stroke-width="2.5" stroke-linejoin="round"><rect x="22" y="2" width="13" height="38" rx="6.5"/><rect x="34" y="22" width="11" height="22" rx="5.5"/><rect x="44" y="26" width="10" height="20" rx="5"/><path d="M12 38c-4-4-2-10 3-9l8 5v-2h31v14c0 13-8 22-20 22s-17-6-22-14z"/></g><path d="M26 10h5" stroke="#E2560F" stroke-width="2.5" stroke-linecap="round"/></svg>';
+function tutSteps() {
+  return [
+    { el: '#btnStrike', text: T('点这里打铁', 'Tap to strike'), strike: 1, dim: 0.45 },
+    { el: '.owrap', text: T('指针落在哪，结果就是哪', 'Where the needle lands is what you get'), pad: 26 },
+    { el: '#btnStrike', text: T('再锤两下', 'Strike twice more'), strike: 2, dim: 0.45 },
+    { el: '#sLevel', text: T('等级越高越值钱，也越容易碎', 'Higher level: worth more, breaks easier') },
+    { el: '#btnSell', text: T('值钱了就卖', 'Sell when the price is right') },
+    { el: '.bar .debt', text: T(`每 ${DAYS} 天还一次债`, `Repay the bank every ${DAYS} days`) },
+    { el: '#fire', text: T(`火候满 ${FIRE_MAX} 格 = 上头时刻，免费锤`, `Fill ${FIRE_MAX} = Fever: free strikes`) },
+    { evo: true },
+  ];
+}
+function startTut() {
+  endTut(true);
+  const o = document.createElement('div'); o.id = 'tut';
+  o.innerHTML = `<div class="tut-hole"></div><div class="tut-hand">${HAND_SVG}</div><div class="tut-tip"><p></p><small></small></div><div class="tut-card" hidden></div><div class="tut-dots"></div><button class="tut-skip" type="button">${T('跳过', 'Skip')}</button>`;
+  document.body.appendChild(o);
+  tut = { o, steps: tutSteps(), i: -1, n: 0, t0: 0, raf: 0 };
+  o.addEventListener('pointerdown', tutDown);
+  o.addEventListener('click', (e) => { if (e.target.closest('#tutGo, .tut-skip')) endTut(); });
+  tutGo(0);
+  const loop = () => { if (!tut) return; tutPlace(); tut.raf = requestAnimationFrame(loop); };
+  tut.raf = requestAnimationFrame(loop);
+}
+function endTut(silent) {
+  if (!tut) return;
+  cancelAnimationFrame(tut.raf); cancelAnimationFrame(stripRaf); tut.o.remove(); tut = null;
+  if (!silent) { meta.tutDone = true; meta.seenHelp = true; saveMeta(); render(); }
+}
+function tutGo(i) {
+  if (!tut) return;
+  if (i >= tut.steps.length) return endTut();
+  tut.i = i; tut.n = 0; tut.t0 = performance.now();
+  const st = tut.steps[i], o = tut.o;
+  o.querySelector('.tut-dots').innerHTML = tut.steps.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
+  o.classList.toggle('isevo', !!st.evo);
+  const card = o.querySelector('.tut-card');
+  card.hidden = !st.evo;
+  if (st.evo) {
+    card.innerHTML = `<h3>${T('每 25 级进化一次', 'Evolves every 25 levels')}</h3>${evoStripHtml()}<button class="btn" type="button" id="tutGo">${T('开打！', "Let's forge!")}</button>`;
+    startEvoStrip(card);
+    return;
+  }
+  o.querySelector('.tut-tip p').textContent = st.text;
+  o.querySelector('.tut-tip small').textContent = st.strike ? '' : T('点任意处继续', 'Tap anywhere to continue');
+  const el = document.querySelector(st.el); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+}
+function tutRect() {
+  const st = tut.steps[tut.i], el = st.el && document.querySelector(st.el);
+  if (!el) return null;
+  const r = el.getBoundingClientRect(), p = st.pad || 8;
+  return { x: r.left - p, y: r.top - p, w: r.width + p * 2, h: r.height + p * 2 };
+}
+function tutPlace() {
+  const st = tut.steps[tut.i]; if (st.evo) return;
+  const r = tutRect(); if (!r) return;
+  const o = tut.o, hole = o.querySelector('.tut-hole'), hand = o.querySelector('.tut-hand'), tip = o.querySelector('.tut-tip');
+  Object.assign(hole.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', boxShadow: `0 0 0 200vmax rgba(8,6,5,${st.dim || 0.66})` });
+  const vh = innerHeight, vw = innerWidth, below = r.y + r.h / 2 < vh * 0.55;
+  // the hand sits just under the target (or over it, near the bottom of the screen) and taps toward it
+  const hx = Math.min(vw - 58, Math.max(4, r.x + r.w / 2 - (below ? 24 : 30)));
+  const hy = below ? r.y + r.h - 4 : r.y - 57;
+  Object.assign(hand.style, { left: hx + 'px', top: hy + 'px' });
+  hand.classList.toggle('down', !below);
+  const tw = Math.min(vw - 32, 320), tx = Math.min(vw - tw - 16, Math.max(16, r.x + r.w / 2 - tw / 2));
+  Object.assign(tip.style, { width: tw + 'px', left: tx + 'px', top: below ? (r.y + r.h + 64) + 'px' : '', bottom: below ? '' : (vh - r.y + 64) + 'px' });
+}
+function tutDown(e) {
+  if (!tut) return;
+  const st = tut.steps[tut.i];
+  if (e.target.closest('.tut-skip')) { e.preventDefault(); return endTut(); }
+  if (st.evo) { if (e.target.closest('#tutGo')) { e.preventDefault(); endTut(); } return; }
+  e.preventDefault();
+  if (st.strike) {
+    const r = tutRect();
+    if (!r || e.clientX < r.x || e.clientX > r.x + r.w || e.clientY < r.y || e.clientY > r.y + r.h) { tut.o.querySelector('.tut-hole').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], 260); return; }
+    ensureAudio(); strike();
+    if (++tut.n >= st.strike) { const i = tut.i; setTimeout(() => { if (tut && tut.i === i) tutGo(i + 1); }, 700); }
+    return;
+  }
+  if (performance.now() - tut.t0 > 350) tutGo(tut.i + 1);
+}
+addEventListener('keydown', (e) => {
+  if (!tut) return;
+  if (e.key === 'Escape') return endTut();
+  if (e.code === 'Space' || e.key === 'Enter') {
+    e.preventDefault(); e.stopImmediatePropagation();
+    const st = tut.steps[tut.i];
+    if (st.evo) return endTut();
+    if (st.strike) { strike(); if (++tut.n >= st.strike) { const i = tut.i; setTimeout(() => { if (tut && tut.i === i) tutGo(i + 1); }, 700); } }
+    else tutGo(tut.i + 1);
+  } else e.stopImmediatePropagation();
+}, true);
+addEventListener('resize', () => { if (tut) tutPlace(); });
+
 $('#tNew').onclick = () => { if (run && !confirmNew()) return; startRun(); };
 let newArmed = 0;
 function confirmNew() { if (performance.now() - newArmed < 3000) return true; newArmed = performance.now(); $('#tNew').textContent = T('会放弃现在这一局，再点一次', 'This abandons your current run. Tap again'); setTimeout(() => { $('#tNew').textContent = T('开张', 'New run'); }, 3000); return false; }
