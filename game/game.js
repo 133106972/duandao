@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.7 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.8 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -20,10 +20,39 @@ const TRAD = {"万":"萬","东":"東","两":"兩","个":"個","么":"麼","买":
 const TRAD_PHRASES = [['擀面杖', '擀麵杖'], ['激光', '雷射']]; // Taiwan wording that a per-character table can't express
 function toTrad(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; for (const [a, b] of TRAD_PHRASES) o = o.split(toTradRaw(a)).join(b); return o; }
 function toTradRaw(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; return o; }
-const LANGS = [['zh', '简体中文'], ['zht', '繁體中文'], ['en', 'English']];
-const T = (zh, en) => (LANG === 'en' ? en : LANG === 'zht' ? toTrad(zh) : zh);
-const N = (o) => (LANG === 'en' && o.en ? o.en : LANG === 'zht' ? toTrad(o.name) : o.name);
-const D = (o) => (LANG === 'en' && o.descEn ? o.descEn : LANG === 'zht' ? toTrad(o.desc) : o.desc);
+const LANGS = [['zh', '简体中文'], ['zht', '繁體中文'], ['en', 'English'], ['es', 'Español'], ['de', 'Deutsch']];
+// Spanish / German: English text is looked up as a template. Names and numbers are masked first, so
+// "Sold +5 Leek for 12" and "Sold +9 Abacus for 3.4K" share one entry: "Sold {0} {1} for {2}". Tables live in i18n.js.
+const I18N = window.I18N || {};
+const isLatin = () => LANG === 'en' || LANG === 'es' || LANG === 'de';
+const NUM_RE = /[+\-×]?\d+(?:[.,]\d+)*(?:Qa|Qi|Sx|Sp|Oc|No|Dc|[KMBT](?![a-z])|[a-z]{2}(?![a-zA-Z]))?%?/g;
+let ENT = null; // [[name as it may appear, translation]] longest first, per language
+function entities() {
+  if (ENT && ENT.lang === LANG) return ENT.list;
+  const tbl = (I18N[LANG] && I18N[LANG].n) || {}, en = new Set();
+  [WEAPONS, ITEMS, RELICS, MATS, UPGS, OFFERS, LOANS].forEach((a) => a.forEach((o) => o.en && en.add(o.en)));
+  Object.values(FORMS).forEach((f) => f.forEach((x) => en.add(x[1]))); NAMES_EN.forEach((x) => en.add(x));
+  const list = [...en].map((k) => [k, tbl[k] || k]); list.forEach(([, v]) => { if (!en.has(v)) list.push([v, v]); });
+  list.sort((a, b) => b[0].length - a[0].length); ENT = { lang: LANG, list }; return list;
+}
+function maskKey(str) {
+  // markers use private-use characters (not digits) so number masking can't touch them
+  const vals = [], mark = (v) => '\u0001' + String.fromCharCode(0xE000 + vals.push(v) - 1) + '\u0002'; let m = String(str).replace(/[«„]/g, '"').replace(/[»“]/g, '"');
+  for (const [k, v] of entities()) if (m.includes(k)) m = m.split(k).join(mark(v));
+  m = m.replace(NUM_RE, (x) => mark(x));
+  const order = []; const key = m.replace(/\u0001([\uE000-\uF8FF])\u0002/g, (_, c) => '{' + (order.push(c.charCodeAt(0) - 0xE000) - 1) + '}');
+  return { key, vals: order.map((i) => vals[i]) };
+}
+function trX(str) {
+  const tb = I18N[LANG]; if (!tb || str == null) return str;
+  const { key, vals } = maskKey(str), tpl = tb.t[key];
+  if (window.__i18nMiss && tpl == null && key !== '{0}' && key) window.__i18nMiss(key);
+  return (tpl == null ? key : tpl).replace(/\{(\d+)\}/g, (_, j) => vals[+j] ?? '');
+}
+const nm = (en) => ((I18N[LANG] && I18N[LANG].n[en]) || en);
+const T = (zh, en) => (LANG === 'en' ? (window.__i18nCollect && window.__i18nCollect(en), en) : LANG === 'zht' ? toTrad(zh) : LANG === 'es' || LANG === 'de' ? trX(en) : zh);
+const N = (o) => (LANG === 'en' && o.en ? o.en : LANG === 'zht' ? toTrad(o.name) : (LANG === 'es' || LANG === 'de') && o.en ? nm(o.en) : o.name);
+const D = (o) => (LANG === 'en' && o.descEn ? o.descEn : LANG === 'zht' ? toTrad(o.desc) : (LANG === 'es' || LANG === 'de') && o.descEn ? trX(o.descEn) : o.desc);
 function inLang(l, fn) { const cur = LANG; LANG = l; try { return fn(); } finally { LANG = cur; } }
 
 // ---------- numbers ----------
@@ -45,7 +74,7 @@ function fmtEn(n) {
 function fmt(n) {
   if (!isFinite(n)) return n < 0 ? T('-不可说', '-∞') : T('不可说不可说', 'Beyond Words');
   if (n < 0) return '-' + fmt(-n);
-  return LANG === 'en' ? fmtEn(n) : LANG === 'zht' ? toTrad(fmtZh(n)) : fmtZh(n);
+  return isLatin() ? fmtEn(n) : LANG === 'zht' ? toTrad(fmtZh(n)) : fmtZh(n);
 }
 const pct = (x) => (x * 100 >= 10 || x === 0 ? (x * 100).toFixed(0) : (x * 100).toFixed(1)) + '%';
 
@@ -99,6 +128,32 @@ const WEAPONS = [
   { id: 'bangbang', name: '彩虹棒棒糖', en: 'Rainbow Lollipop', rar: 4, desc: '每级多涨 15%', descEn: 'Each level adds 15% more value', col: '#FF6FB5', ext: [1.9, 1.9], g: 0.15 },
 ];
 const WP = Object.fromEntries(WEAPONS.map((w) => [w.id, w]));
+const FORM_LV = [0, 25, 50, 75];
+const STAGES = [['凡形', 'Base'], ['觉醒', 'Awakened'], ['器灵', 'Spirit'], ['神化', 'Ascended']];
+const stageOf = (L) => (L >= 75 ? 3 : L >= 50 ? 2 : L >= 25 ? 1 : 0);
+const FORMS = {
+  jian: [['直剑', 'Straight Sword'], ['青锋剑', 'Azure Blade'], ['龙泉剑', 'Dragon Spring Sword'], ['轩辕剑', 'Xuanyuan Sword']],
+  caidao: [['菜刀', 'Cleaver'], ['斩骨刀', 'Bone Chopper'], ['庖丁刀', "Cook Ding's Knife"], ['天厨神刀', 'Celestial Cleaver']],
+  ganmian: [['擀面杖', 'Rolling Pin'], ['枣木杖', 'Jujube Pin'], ['定海擀面杖', 'Sea-Calming Pin'], ['擎天一擀', 'Sky Pillar Pin']],
+  tuoxie: [['人字拖', 'Flip-flop'], ['老头乐凉鞋', 'Grandpa Sandal'], ['风火拖', 'Wind-Fire Flip-flop'], ['筋斗云拖', 'Cloud-Somersault Slipper']],
+  cong: [['大葱', 'Leek'], ['章丘大葱', 'Prize Leek'], ['葱王', 'Leek King'], ['葱仙', 'Leek Immortal']],
+  guo: [['平底锅', 'Frying Pan'], ['铁锅', 'Iron Wok'], ['炒天锅', 'Sky-Stir Wok'], ['乾坤锅', 'Cosmic Wok']],
+  san: [['雨伞', 'Umbrella'], ['油纸伞', 'Oil-Paper Umbrella'], ['青罗伞', 'Silk Parasol'], ['混元伞', 'Primordial Parasol']],
+  fagun: [['法棍', 'Baguette'], ['硬法棍', 'Stale Baguette'], ['金刚法棍', 'Diamond Baguette'], ['永恒法棍', 'Eternal Baguette']],
+  jitui: [['鸡腿', 'Drumstick'], ['烤鸡腿', 'Roast Drumstick'], ['凤凰腿', 'Phoenix Leg'], ['不死鸟腿', 'Undying Phoenix Leg']],
+  suanpan: [['算盘', 'Abacus'], ['铁算盘', 'Iron Abacus'], ['玉算盘', 'Jade Abacus'], ['天机算盘', 'Abacus of Fate']],
+  tanghulu: [['糖葫芦', 'Candied Haws'], ['冰糖葫芦', 'Rock-Sugar Haws'], ['琉璃葫芦', 'Glazed Gourds'], ['七宝葫芦', 'Seven-Treasure Gourds']],
+  yu: [['咸鱼', 'Salted Fish'], ['腊鱼', 'Cured Fish'], ['翻身鱼', 'Flipping Fish'], ['北冥之鲲', 'Kun of the Northern Sea']],
+  jiguang: [['激光剑', 'Laser Sword'], ['光能剑', 'Photon Blade'], ['等离子剑', 'Plasma Blade'], ['星河光剑', 'Galaxy Saber']],
+  jita: [['电吉他', 'Electric Guitar'], ['失真吉他', 'Distortion Guitar'], ['摇滚之魂', 'Soul of Rock'], ['天籁神琴', 'Heavenly Shredder']],
+  jianpan: [['键盘', 'Keyboard'], ['机械键盘', 'Mechanical Keyboard'], ['RGB 键盘', 'RGB Keyboard'], ['键神', 'The Keymaster']],
+  qian: [['铜钱剑', 'Coin Sword'], ['五帝钱剑', 'Five-Emperor Coin Sword'], ['金钱剑', 'Golden Coin Sword'], ['聚宝剑', 'Treasure-Gathering Sword']],
+  maton: [['马桶搋子', 'Plunger'], ['疏通神器', 'Unclogger'], ['真空搋子', 'Vacuum Plunger'], ['吞天搋', 'Sky-Swallowing Plunger']],
+  dianzuan: [['电钻', 'Power Drill'], ['冲击钻', 'Hammer Drill'], ['钻地龙', 'Earth Dragon Drill'], ['穿天钻', 'Heaven-Piercing Drill']],
+  jingu: [['金箍棒', 'Golden Staff'], ['如意棒', 'Ruyi Staff'], ['定海神针', 'Sea-Pinning Pillar'], ['如意金箍棒', 'Ruyi Jingu Bang']],
+  bangbang: [['彩虹棒棒糖', 'Rainbow Lollipop'], ['七彩棒棒糖', 'Prism Lollipop'], ['极光糖', 'Aurora Pop'], ['宇宙棒棒糖', 'Cosmic Lollipop']],
+};
+const formName = (shape, L) => { const f = FORMS[shape][stageOf(L)]; return T(f[0], f[1]); };
 const MILES = [{ n: 5, desc: '体力上限 +2', descEn: 'Max stamina +2' }, { n: 10, desc: '成功率 +2%', descEn: 'Success +2%' }, { n: 15, desc: '卖价 ×1.1', descEn: 'Sell price ×1.1' }, { n: 20, desc: '新胚子直接 +2 级', descEn: 'New blanks start at +2' }];
 
 // 秘籍 (seals): one picked after every repaid period, lasts the whole run
@@ -136,15 +191,16 @@ const RMAP = Object.fromEntries(RELICS.map((r) => [r.id, r]));
 const ITEMS = [
   { id: 'bao', ch: '包', name: '肉包子', en: 'Meat Bun', desc: '体力 +6', descEn: '+6 stamina', price: 0.05 },
   { id: 'shen', ch: '参', name: '老山参', en: 'Wild Ginseng', desc: '体力回满', descEn: 'Full stamina', price: 0.16 },
-  { id: 'hu', ch: '护', name: '护剑符', en: 'Ward', desc: '下一锤不会碎（碎裂变成受损）', descEn: "The next strike can't break (break becomes damage)", price: 0.22 },
-  { id: 'zhu', ch: '祝', name: '祝福油', en: 'Blessing Oil', desc: '下一锤成功率 +25%', descEn: 'Next strike +25% success', price: 0.14 },
-  { id: 'tian', ch: '天', name: '天工锤', en: 'Heaven Hammer', desc: '下一锤必定成功', descEn: 'The next strike always succeeds', price: 0.38 },
-  { id: 'cui', ch: '淬', name: '淬火水', en: 'Quench Water', desc: '接下来 5 锤碎裂率减半', descEn: 'Break chance halved for the next 5 strikes', price: 0.28 },
+  { id: 'hu', ch: '护', name: '护剑符', en: 'Ward', desc: '下一锤不会碎（碎裂变成受损）。吃几张管几锤', descEn: "The next strike can't break (break becomes damage). Stacks: one per strike", price: 0.22 },
+  { id: 'zhu', ch: '祝', name: '祝福油', en: 'Blessing Oil', desc: '下一锤成功率 +25%。用几瓶管几锤', descEn: 'Next strike +25% success. Stacks: one per strike', price: 0.14 },
+  { id: 'tian', ch: '天', name: '天工锤', en: 'Heaven Hammer', desc: '下一锤必定成功。用 7 个就管接下来 7 锤', descEn: 'The next strike always succeeds. Use 7 and the next 7 strikes all succeed', price: 0.38 },
+  { id: 'cui', ch: '淬', name: '淬火水', en: 'Quench Water', desc: '接下来 5 锤碎裂率减半（可以叠加）', descEn: 'Break chance halved for the next 5 strikes (stacks)', price: 0.28 },
   { id: 'bu', ch: '补', name: '补铁膏', en: 'Iron Patch', desc: '砧上的东西直接 +1 级', descEn: 'The item on the anvil gets +1 level', price: 0.3 },
   { id: 'qi', ch: '漆', name: '金漆', en: 'Gold Lacquer', desc: '砧上的东西估价 ×1.5（每件只能刷一次）', descEn: 'The item on the anvil is worth ×1.5 (once per item)', price: 0.32 },
   { id: 'ya', ch: '牙', name: '牙行帖', en: "Broker's Note", desc: '下一次卖东西多卖 40%', descEn: 'The next sale earns 40% more', price: 0.18 },
   { id: 'xia', ch: '匣', name: '剑匣', en: 'Sword Case', desc: '剑架多一格（这一局有效）', descEn: 'One more rack slot (this run)', price: 0.45 },
   { id: 'li', ch: '历', name: '黄历', en: 'Almanac', desc: '明天开盘至少 ×1.40', descEn: 'Tomorrow opens at ×1.40 or higher', price: 0.3 },
+  { id: 'hui', ch: '悔', name: '后悔药', en: 'Regret Pill', desc: '把刚碎掉的东西原样找回来（要在下一锤之前吃）', descEn: 'Bring back the item that just broke, exactly as it was (before your next strike)', price: 0.6 },
 ];
 const IMAP = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
 
@@ -161,7 +217,7 @@ const UPGS = [
 // The loan is the only leverage in the game and is deliberately small: borrow 50% of the next debt, pay back 65% with it.
 const OFFERS = [
   { id: 'seal', ch: '籍', name: '多一本秘籍', en: 'An extra seal', price: 0.8 },
-  { id: 'mat', ch: '料', name: '换好料', en: 'Better material', price: 1.0, desc: '这一局之后的新胚子换成「{0}」', descEn: 'New blanks this run use {0}' },
+  { id: 'mat', ch: '料', name: '换好料', en: 'Better material', price: 1.0, desc: '这一局之后的新胚子换成「@」', descEn: 'New blanks this run use @' },
   { id: 'stam', ch: '力', name: '练力气', en: 'Strength training', price: 0.45, desc: '这一局体力上限 +3', descEn: 'Max stamina +3 this run' },
   { id: 'succ', ch: '师', name: '拜师学艺', en: 'Apprenticeship', price: 0.6, desc: '这一局成功率 +3%', descEn: 'Success +3% this run' },
   { id: 'slot', ch: '架', name: '扩建剑架', en: 'Rack extension', price: 0.35, desc: '剑架 +1 格', descEn: '+1 rack slot' },
@@ -169,8 +225,10 @@ const OFFERS = [
   { id: 'fire', ch: '火', name: '火种', en: 'Kindling', price: 0.25, desc: '火候 +6 格', descEn: 'Fire meter +6' },
   { id: 'luck', ch: '签', name: '上上签', en: 'Lucky draw', price: 0.5, desc: '这一局稀有兵器更容易出', descEn: 'Rare weapons show up more often this run' },
 ];
-const NEWS_UP = [['城里来了个大主顾，见剑就收', 'A big buyer is in town, buying every blade'], ['武林大会要开了，兵器抢手', 'The tournament is coming, weapons are hot'], ['镖局大批采购，剑价拉升', 'The escort agency is buying in bulk'], ['隔壁铁匠铺失火了，货都涨价', 'The smithy next door burned down'], ['有人说你家的东西能辟邪', 'Word is your work wards off evil']];
-const NEWS_DOWN = [['官府查禁私铸，剑价跳水', 'The magistrate banned private forging'], ['有人在城门口甩卖库存', 'Someone is dumping stock at the city gate'], ['传言兵器要加税，剑价下跌', 'Rumor of a weapons tax'], ['江湖太平了，没人买剑', 'Peace broke out, nobody needs blades'], ['对门新开了一家铁匠铺', 'A new smithy opened across the street']];
+// leverage: borrow a share of the next debt; bigger loans carry higher interest. One loan per bazaar.
+const LOANS = [{ x: 0.5, rate: 0.3, name: '小额借款', en: 'Small loan' }, { x: 1, rate: 0.45, name: '大额借款', en: 'Big loan' }, { x: 2, rate: 0.7, name: '高利贷', en: 'Loan shark' }];
+const NEWS_UP = [['城里来了个大主顾，见剑就收', 'A big buyer is in town, buying every blade'], ['武林大会要开了，兵器抢手', 'The tournament is coming, weapons are hot'], ['镖局大批采购', 'The escort agency is buying in bulk'], ['隔壁铁匠铺失火了，货都涨价', 'The smithy next door burned down'], ['有人说你家的东西能辟邪', 'Word is your work wards off evil']];
+const NEWS_DOWN = [['官府查禁私铸', 'The magistrate banned private forging'], ['有人在城门口甩卖库存', 'Someone is dumping stock at the city gate'], ['传言兵器要加税', 'Rumor of a weapons tax'], ['江湖太平了，没人买剑', 'Peace broke out, nobody needs blades'], ['对门新开了一家铁匠铺', 'A new smithy opened across the street']];
 
 // ---------- storage ----------
 const store = {
@@ -184,7 +242,7 @@ if (!meta.codex) meta.codex = {};
 if (!meta.forged) meta.forged = {};
 for (const k of Object.keys(meta.codex)) if (!WP[k]) delete meta.codex[k];
 if (meta.vibe === undefined) meta.vibe = true;
-{ const nl = (navigator.language || 'zh').toLowerCase(); LANG = meta.lang || (/^zh-(tw|hk|mo|hant)/.test(nl) ? 'zht' : nl.startsWith('zh') ? 'zh' : 'en'); }
+{ const nl = (navigator.language || 'zh').toLowerCase(); LANG = meta.lang || (/^zh-(tw|hk|mo|hant)/.test(nl) ? 'zht' : nl.startsWith('zh') ? 'zh' : nl.startsWith('es') && I18N.es ? 'es' : nl.startsWith('de') && I18N.de ? 'de' : 'en'); }
 { const q = new URLSearchParams(location.search).get('lang'); if (LANGS.some(([k]) => k === q)) LANG = q; }
 let run = DEMO ? null : store.get('ycmm-run', null);
 if (run && run.v !== SAVE_V) run = null;
@@ -323,7 +381,7 @@ function newRun(mat) {
 }
 const addItem = (id, n = 1) => { run.bag[id] = (run.bag[id] || 0) + n; };
 function dropItem(why) { const w = typeof why === 'function' ? why : () => why, id = pick(ITEMS.filter((i) => i.id !== 'xia').map((i) => i.id)); addItem(id); addLog(() => w() + T('，捡到「', ': found ') + N(IMAP[id]) + T('」', ''), 'c'); fx.pop2(T('捡到「' + N(IMAP[id]) + '」', 'Found: ' + N(IMAP[id])), '#F2C14E'); }
-const wname = (s) => N(WP[s.shape]) + T('「' + sname(s) + '」', ' "' + sname(s) + '"');
+const wname = (s) => formName(s.shape, s.level) + T('「' + sname(s) + '」', ' "' + sname(s) + '"');
 
 // ---------- actions ----------
 let lastStrike = 0;
@@ -332,6 +390,7 @@ function strike() {
   if (run.stam <= 0 && !(run.fever > 0)) { toast(run.bag.bao || run.bag.shen ? T('没力气了。背包里有吃的，或者睡一觉', 'Out of stamina. Eat something from the bag, or sleep') : T('没力气了，睡一觉明天再打', 'Out of stamina. Sleep and try tomorrow')); return; }
   const now = performance.now(); if (now - lastStrike < 140) return; lastStrike = now;
   ensureAudio();
+  run.lastBroken = null;
   const feverStrike = run.fever > 0, lastFever = run.fever === 1;
   const s = run.sword, L = s.level, o = odds(s), b = run.buffs; // odds first: the fever counter must still count this strike
   if (feverStrike) run.fever--; else run.stam--;
@@ -345,7 +404,8 @@ function strike() {
   if (roll === undefined) { const i = seg[r], a = i ? cum[i - 1] : 0; roll = a + (cum[i] - a) * (0.2 + 0.6 * R()); }
   const nearBreak = o.brk > 0 && r !== 'brk' && roll - o.brk < 0.03;
   run.firstOfDay = false;
-  if (b.cui > 0) b.cui--; delete b.zhu; delete b.tian; delete b.hu;
+  if (b.cui > 0) b.cui--;
+  for (const k of ['zhu', 'tian', 'hu']) if (b[k]) { b[k] = (b[k] === true ? 1 : b[k]) - 1; if (b[k] <= 0) delete b[k]; } // one charge per strike
   const raw = r; let note = '';
   if (r === 'keep' && has('mo') && R() < 0.35) { r = 'succ'; note = () => T('磨刀石：改成成功', 'Whetstone: turned into a success'); }
   if (r === 'brk' && s.shape === 'yu' && R() < 0.3) { r = 'great'; note = () => T('咸鱼翻身！', 'Fish flip!'); }
@@ -367,7 +427,7 @@ function strike() {
   if (has('lian') && run.streak >= 3 && (r === 'succ' || r === 'great')) { run.forceGreat = true; note = note || (() => T('连击谱：下一锤必定大成功', 'Combo Manual: next strike is a great success')); }
   const oldTier = tierOf(L).idx, nm = wname(s), streakNow = run.streak;
   if (has('lian') && run.forceGreat && run.streak >= 3) run.streak = 0;
-  if (r === 'brk') { fx.ghost = { ...s }; newBlank(); fx.born = performance.now() + 450; }
+  if (r === 'brk') { fx.ghost = { ...s }; run.lastBroken = { ...s }; newBlank(); fx.born = performance.now() + 450; }
   else { s.level = Math.max(0, L + delta); noteCodex(s); }
   run.stats.maxLevel = Math.max(run.stats.maxLevel, run.sword.level);
   const after = run.sword.level, tierUp = r !== 'brk' && tierOf(after).idx > oldTier;
@@ -375,6 +435,8 @@ function strike() {
   addLog(() => msgOf()[0], msgOf()[1]); if (note) addLog(note, 'c');
   if (nearBreak) addLog(() => T('好险！差 ' + pct(roll - o.brk) + ' 就碎了', 'Close call! ' + pct(roll - o.brk) + ' from breaking'), 'd');
   if (r === 'great' && R() < 0.12) dropItem(() => T('大成功的火星里', 'In the sparks'));
+  const evolved = r !== 'brk' && stageOf(after) > stageOf(L);
+  if (evolved) addLog(() => T('形态进化！' + FORMS[s.shape][stageOf(L)][0] + ' → ' + FORMS[s.shape][stageOf(after)][0], 'Evolution! ' + FORMS[s.shape][stageOf(L)][1] + ' → ' + FORMS[s.shape][stageOf(after)][1]), 'g');
   let feverStart = false;
   if (!feverStrike) {
     run.fire = clamp((run.fire || 0) + ({ succ: 1, great: 2, keep: 0, dmg: -2 }[r] ?? -99), 0, FIRE_MAX);
@@ -382,14 +444,14 @@ function strike() {
   } else if (!run.fever) addLog(() => T('上头时刻结束，冷静下来了', 'Fever over, cooling down'));
   tickMarket();
   if (run.fever === 1) addLog(() => T('注意：上头时刻只剩最后一锤，这一锤会碎！', 'Careful: one fever strike left, and it CAN break!'), 'd');
-  fx.strike({ r, raw, delta, roll, seg: seg[raw], nearBreak, tierUp, note, level: after, streak: streakNow, feverStart, feverEnd: feverStrike && !run.fever, lastWarn: run.fever === 1, lastFever });
+  fx.strike({ r, raw, delta, roll, seg: seg[raw], nearBreak, tierUp, note, level: after, streak: streakNow, feverStart, feverEnd: feverStrike && !run.fever, lastWarn: run.fever === 1, lastFever, evolved, broke: r === 'brk' && !!run.bag.hui });
   sfx('hit');
   render(); saveRun();
 }
 function sellSword(s, where) {
-  const p = priceOf(s), wh = typeof where === 'function' ? where : () => where; delete run.buffs.ya;
+  const p = priceOf(s), rack = !!where; delete run.buffs.ya;
   run.gold += p; run.stats.sold++; run.stats.maxSale = Math.max(run.stats.maxSale, p);
-  addLog(() => T('卖出' + wh() + ' +' + s.level + ' ' + N(WP[s.shape]) + '，得 ', 'Sold +' + s.level + ' ' + N(WP[s.shape]) + wh() + ' for ') + fmt(p) + T('（现价 ×', ' (price ×') + run.mk.now.toFixed(2) + T('）', ')'), 'c');
+  addLog(() => T('卖出' + (rack ? '剑架上的' : '') + ' +' + s.level + ' ' + N(WP[s.shape]) + '，得 ', 'Sold +' + s.level + ' ' + N(WP[s.shape]) + (rack ? ' from the rack' : '') + ' for ') + fmt(p) + T('（现价 ×', ' (price ×') + run.mk.now.toFixed(2) + T('）', ')'), 'c');
   if (s.level >= 20) { dropItem(() => T('大主顾打赏', 'A big tip')); dropItem(() => T('大主顾打赏', 'A big tip')); } else if (s.level >= 10) dropItem(() => T('主顾打赏', 'A tip'));
   fx.sold(p, s.level >= 15); sfx('coin'); vib(25);
   return p;
@@ -397,7 +459,7 @@ function sellSword(s, where) {
 function sell() {
   if (!run || modalOpen()) return;
   if (run.sword.level < 1) { toast(T('至少打到 +1 才有人收', 'Nobody buys a blank. Get it to +1 first')); return; }
-  ensureAudio(); sellSword(run.sword, ''); newBlank(); render(); saveRun();
+  ensureAudio(); sellSword(run.sword, false); newBlank(); render(); saveRun();
 }
 function storeSword() {
   if (!run || modalOpen()) return;
@@ -420,7 +482,7 @@ function rackAction(i) {
       <button class="btn ghost" id="rBack" type="button">${T('先放着', 'Leave it')}</button>
     </div>`);
   drawIcon($('#bigSword'), s);
-  $('#rSell').onclick = () => { run.rack.splice(i, 1); sellSword(s, () => T('剑架上的', ' from the rack')); closeSheet(); render(); saveRun(); };
+  $('#rSell').onclick = () => { run.rack.splice(i, 1); sellSword(s, true); closeSheet(); render(); saveRun(); };
   $('#rTake').onclick = () => { if (anvil.level >= 1) run.rack[i] = anvil; else run.rack.splice(i, 1); run.sword = s; fx.born = performance.now(); run.streak = 0; addLog(() => T('把 +' + s.level + ' ' + N(wp) + ' 拿上砧子', 'Put the +' + s.level + ' ' + N(wp) + ' on the anvil')); closeSheet(); render(); saveRun(); };
   $('#rFeed').onclick = () => {
     run.rack.splice(i, 1); run.sword.mul *= fm; fx.feed(); sfx('great'); vib([20, 30, 40]);
@@ -434,14 +496,16 @@ function useItem(id) {
   const it = IMAP[id], s = run.sword, b = run.buffs;
   if (id === 'qi' && s.gilded) { toast(T('这件已经刷过金漆了', 'This one is already lacquered')); return; }
   if ((id === 'bao' || id === 'shen') && run.stam >= maxStam()) { toast(T('体力是满的，先留着', 'Stamina is full, save it')); return; }
+  if (id === 'hui' && !run.lastBroken) { toast(T('现在没有刚碎掉的东西，先留着', 'Nothing just broke. Save it for when it does')); return; }
   run.bag[id]--; if (!run.bag[id]) delete run.bag[id];
   if (id === 'bao') run.stam = Math.min(maxStam(), run.stam + 6);
   else if (id === 'shen') run.stam = maxStam();
-  else if (id === 'hu') b.hu = true;
-  else if (id === 'zhu') b.zhu = true;
-  else if (id === 'tian') b.tian = true;
-  else if (id === 'cui') b.cui = 5;
-  else if (id === 'bu') { s.level++; noteCodex(s); fx.pop('+1', '#8BD06A'); }
+  else if (id === 'hu') b.hu = (+b.hu || 0) + 1;
+  else if (id === 'zhu') b.zhu = (+b.zhu || 0) + 1;
+  else if (id === 'tian') b.tian = (+b.tian || 0) + 1;
+  else if (id === 'cui') b.cui = (b.cui || 0) + 5;
+  else if (id === 'hui') { run.sword = run.lastBroken; run.lastBroken = null; fx.born = performance.now(); fx.regret(); }
+  else if (id === 'bu') { const st0 = stageOf(s.level); s.level++; noteCodex(s); fx.pop('+1', '#8BD06A'); if (stageOf(s.level) > st0) setTimeout(() => fx.evolve(s), 200); }
   else if (id === 'qi') { s.mul *= 1.5; s.gilded = true; fx.pop(T('金漆 ×1.5', 'Lacquer ×1.5'), '#F2C14E'); }
   else if (id === 'ya') b.ya = true;
   else if (id === 'xia') run.extraSlots++;
@@ -464,7 +528,7 @@ function shopSheet() {
   });
   $('#sBack').onclick = closeSheet;
 }
-let restArmed = 0;
+let restArmed = -1e9; // time the sleep button was armed for confirmation
 function rest() {
   if (!run || modalOpen()) return;
   if (run.stam > 0 && performance.now() - restArmed > 2500) { restArmed = performance.now(); $('#btnRest').textContent = T('还有 ' + run.stam + ' 点体力，确定睡觉？', run.stam + ' stamina left. Sleep anyway?'); setTimeout(render, 2500); return; }
@@ -474,6 +538,7 @@ function endDay() {
   if (has('ye')) { let n = 0; for (const s of [run.sword, ...run.rack]) if (s.level > 0) { s.mul *= 1.08; n++; } if (n) addLog(() => T('夜市：' + n + ' 件东西估价 +8%', 'Night Market: ' + n + ' items gained 8% value'), 'c'); }
   for (const s of run.rack) if (s.shape === 'fagun') { s.mul *= 1.1; addLog(() => T('剑架上的法棍又硬了一点：估价 +10%', 'The baguette on the rack got harder: +10% value'), 'c'); }
   if (run.fever > 0) { run.fever = 0; addLog(() => T('睡了一觉，上头时刻没了', 'Slept it off. Fever is over')); }
+  run.lastBroken = null;
   const close = run.mk.now; closeMarket();
   run.day++; run.stam = maxStam(); run.firstOfDay = true; restock();
   ensureAudio();
@@ -528,18 +593,19 @@ const offerPrice = (o) => Math.round(baseQuota() * OFFERS.find((x) => x.id === o
 function offerText(o) {
   const d = OFFERS.find((x) => x.id === o.id);
   if (o.id === 'seal') { const r = RMAP[o.seal]; return [T('秘籍「' + N(r) + '」', 'Seal: ' + N(r)), D(r), r.ch]; }
-  if (o.id === 'mat') { const m = nextMat(); return [N(d), D(d).replace('{0}', m ? N(m) : '—'), d.ch]; }
+  if (o.id === 'mat') { const m = nextMat(); return [N(d), D(d).replace('@', m ? N(m) : '—'), d.ch]; }
   return [N(d), D(d), d.ch];
 }
 function market() {
   if (!run.fair) rollMarket();
-  const f = run.fair, Q = baseQuota(), loanAmt = Math.round(Q * 0.5), loanDue = Math.round(Q * 0.65), reroll = Math.round(Q * 0.1 * Math.pow(1.6, f.rerolls));
+  const f = run.fair, Q = baseQuota(), reroll = Math.round(Q * 0.1 * Math.pow(1.6, f.rerolls));
   const rows = f.offers.map((o, k) => { const [nm, ds, ch] = offerText(o), p = offerPrice(o);
     return `<div class="offer${o.bought ? ' bought' : ''}"><span class="seal">${ch}</span><b>${nm}</b><button class="btn${o.bought ? ' ghost' : ''}" type="button" data-o="${k}" ${o.bought || run.gold < p ? 'disabled' : ''}>${o.bought ? T('买了', 'Bought') : fmt(p)}</button><span>${ds}</span></div>`; }).join('');
-  const loan = `<div class="offer loan${f.loaned ? ' bought' : ''}"><span class="seal">贷</span><b>${T('钱庄借款', 'Bank loan')}</b><button class="btn ghost" type="button" id="fLoan" ${f.loaned ? 'disabled' : ''}>${f.loaned ? T('借过了', 'Taken') : T('借 ', 'Borrow ') + fmt(loanAmt)}</button><span>${T('现在拿 ' + fmt(loanAmt) + '，下一期连本带利多还 ' + fmt(loanDue) + '。还不上照样收铺子。', 'Get ' + fmt(loanAmt) + ' now, owe ' + fmt(loanDue) + ' more next period. Miss it and you lose the shop.')}</span></div>`;
+  const loan = LOANS.map((ln, k) => { const amt = Math.round(Q * ln.x), due = Math.round(amt * (1 + ln.rate));
+    return `<div class="offer loan${f.loaned ? ' bought' : ''}"><span class="seal">贷</span><b>${T(ln.name, ln.en)} · ${T('利息', 'interest')} ${pct(ln.rate)}</b><button class="btn ghost" type="button" data-loan="${k}" ${f.loaned ? 'disabled' : ''}>${T('借 ', 'Borrow ') + fmt(amt)}</button><span>${T('现在拿 ' + fmt(amt) + '，下一期连本带利多还 ' + fmt(due) + '。还不上照样收铺子。', 'Get ' + fmt(amt) + ' now, owe ' + fmt(due) + ' more next period. Miss it and you lose the shop.')}</span></div>`; }).join('') + (f.loaned ? `<p class="foot">${T('这次集市已经借过了，一次只能借一笔。', 'You already took a loan at this bazaar. One per visit.')}</p>` : '');
   openSheet(`<h2>${T('集市', 'Bazaar')}</h2><p>${T('每还清一期开一次集，价钱跟着下一期欠款走。你有 ', 'Opens after every repaid period; prices follow the next debt. You have ')}<b class="gold-now">${fmt(run.gold)}</b></p><div class="cards">${rows}${loan}</div><div class="btns"><button class="btn ghost" id="fRe" type="button" ${run.gold < reroll ? 'disabled' : ''}>${T('换一批货', 'Reroll')} · ${fmt(reroll)}</button><button class="btn" id="fGo" type="button">${T('离开，开始第 ' + run.period + ' 期', 'Leave and start period ' + run.period)}</button></div>`);
   $('#sheet').querySelectorAll('[data-o]').forEach((bt) => bt.onclick = () => buyOffer(+bt.dataset.o));
-  $('#fLoan').onclick = () => { if (f.loaned) return; f.loaned = true; run.gold += loanAmt; run.loan += loanDue; addLog(() => T('向钱庄借了 ' + fmt(loanAmt) + '，下期多还 ' + fmt(loanDue), 'Borrowed ' + fmt(loanAmt) + ' from the bank; ' + fmt(loanDue) + ' more due next period'), 'd'); sfx('coin'); saveRun(); render(); market(); };
+  $('#sheet').querySelectorAll('[data-loan]').forEach((bt) => bt.onclick = () => { if (f.loaned) return; const ln = LOANS[+bt.dataset.loan], amt = Math.round(Q * ln.x), due = Math.round(amt * (1 + ln.rate)); f.loaned = true; run.gold += amt; run.loan += due; addLog(() => T('向钱庄借了 ' + fmt(amt) + '，下期多还 ' + fmt(due), 'Borrowed ' + fmt(amt) + ' from the bank; ' + fmt(due) + ' more due next period'), 'd'); sfx('coin'); saveRun(); render(); market(); });
   $('#fRe').onclick = () => { if (run.gold < reroll) return; run.gold -= reroll; const r2 = f.rerolls + 1; rollMarket(); run.fair.rerolls = r2; run.fair.loaned = f.loaned; sfx('keep'); saveRun(); render(); market(); };
   $('#fGo').onclick = () => { run.fair = null; closeSheet(); render(); saveRun(); };
   if (DEMO) setTimeout(() => $('#fGo') && $('#fGo').click(), 1400);
@@ -588,14 +654,19 @@ function closeSheet() { $('#modal').hidden = true; }
 function hideScreens() { $('#titleScreen').hidden = true; $('#shopScreen').hidden = true; $('#codexScreen').hidden = true; }
 let toastT = 0;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
-function addLog(t, cls = '') { if (!run) return; const e = typeof t === 'function' ? [inLang('zh', t), inLang('en', t), cls] : [t, t, cls]; run.log.unshift(e); run.log.length = Math.min(run.log.length, 5); }
-const logText = (e) => { const [zh, en] = e.length >= 3 ? e : [e[0], e[0]]; return LANG === 'en' ? en : LANG === 'zht' ? toTrad(zh) : zh; };
+// log entries are rendered once per language when they happen, so switching language later shows them translated
+function addLog(t, cls = '') {
+  if (!run) return;
+  const e = typeof t === 'function' ? [inLang('zh', t), inLang('en', t), cls, Object.fromEntries(Object.keys(I18N).map((l) => [l, inLang(l, t)]))] : [t, t, cls];
+  run.log.unshift(e); run.log.length = Math.min(run.log.length, 5);
+}
+const logText = (e) => { const [zh, en] = e.length >= 3 ? e : [e[0], e[0]]; return LANG === 'en' ? en : LANG === 'zht' ? toTrad(zh) : LANG === 'es' || LANG === 'de' ? (e[3] && e[3][LANG]) || trX(en) : zh; };
 let tab = 'market';
 function setTab(t) { tab = t; document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t)); ['rack', 'bag', 'market', 'seals'].forEach((k) => { $('#pane-' + k).hidden = k !== t; }); if (run) render(); }
 document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 // static page text
 function applyStatic() {
-  document.documentElement.lang = LANG === 'en' ? 'en' : LANG === 'zht' ? 'zh-Hant' : 'zh-CN';
+  document.documentElement.lang = isLatin() ? LANG : LANG === 'zht' ? 'zh-Hant' : 'zh-CN';
   const rs = document.documentElement.style;
   if (LANG === 'zht') {
     if (!$('#tcfonts')) { const l = document.createElement('link'); l.id = 'tcfonts'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap'; document.head.appendChild(l); }
@@ -612,7 +683,7 @@ function applyStatic() {
   set('#shopH', '铺子', 'Workshop'); set('#sFameLbl', '名望', 'Fame'); set('#shopFoot', '每局结束按撑过的期数和最高卖价得名望。升级永久有效。', 'Each run ends with fame based on periods survived and your best sale. Upgrades are permanent.');
   set('#secMat', '料子', 'Materials'); set('#secUpg', '手艺', 'Skills'); set('#shopBack', '回去', 'Back');
   set('#codexFoot', '打出过的兵器会记在这里。收集得越多，铺子的永久加成越多。', 'Every weapon you forge is recorded here. Collect more for permanent bonuses.'); set('#codexBack', '回去', 'Back');
-  const en = LANG === 'en', logo = $('.logo'); logo.textContent = T('一锤子买卖', 'One Hammer Deal');
+  const en = isLatin(), logo = $('.logo'); logo.textContent = T('一锤子买卖', 'One Hammer Deal');
   Object.assign(logo.style, { fontFamily: en || LANG === 'zht' ? 'var(--serif)' : '', fontSize: en ? 'clamp(34px,9.5vw,64px)' : '', whiteSpace: en ? 'normal' : '', fontWeight: en ? '900' : '' });
   $('#tTag').style.letterSpacing = en ? '.08em' : '';
   $('#strikeLbl').style.font = en ? '900 26px var(--serif)' : '';
@@ -633,7 +704,7 @@ function langSheet(back) {
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false;
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.7 · 存档在这台设备的浏览器里', 'v0.7 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.8 · 存档在这台设备的浏览器里', 'v0.8 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -647,7 +718,7 @@ function showShop() {
   }).join('');
 }
 $('#shopScreen').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  const b = e.target.closest('button'); if (!b || b.disabled || !(b.dataset.mat || b.dataset.upg)) return; // the Back button has its own handler
   if (b.dataset.mat) { const m = MAT[b.dataset.mat]; if (meta.fame >= m.cost) { meta.fame -= m.cost; meta.mats.push(m.id); ensureAudio(); sfx('pay'); } }
   if (b.dataset.upg) { const u = UPGS.find((x) => x.id === b.dataset.upg), l = ulv(u.id), c = u.cost(l); if (l < u.max && meta.fame >= c) { meta.fame -= c; meta.upg[u.id] = l + 1; ensureAudio(); sfx('pay'); } }
   saveMeta(); showShop();
@@ -663,22 +734,24 @@ function showCodex() {
     const list = WEAPONS.filter((x) => x.rar === r), got = list.filter((x) => meta.codex[x.id] !== undefined).length;
     return `<div class="cgrade" style="--rq:${rq.color}"><div class="chead"><b>${RK(rq)} · ${N(rq)}</b><span>${T('出现率 ', 'Drop rate ')}${pct(w[r] / tw)} · ${T('底价', 'base')} ×${rq.bm}</span><span>${got}/${list.length} · ${gd[r] ? T('集齐：', 'Complete: ') : T('集齐奖励：', 'Set bonus: ')}${GB(r)}</span></div><div class="cgrid">` +
       list.map((x) => { const has1 = meta.codex[x.id] !== undefined, lv = meta.codex[x.id] || 0;
-        return `<div class="cx${has1 ? '' : ' lock'}"><canvas data-shape="${x.id}"></canvas><b>${has1 ? N(x) : '???'}</b><span class="stars">${has1 ? stars(lv) : ''}</span><span>${has1 ? T('最高 +' + lv + ' · 打过 ' + (meta.forged[x.id] || 1) + ' 件', 'Best +' + lv + ' · forged ' + (meta.forged[x.id] || 1)) : T('还没打出来过', 'Not found yet')}</span>${has1 ? `<span>${D(x)}</span>` : ''}</div>`; }).join('') + '</div></div>';
-  }).join('') + `<p class="foot">${T('★ 打到 +5　★★ 打到 +10　★★★ 打到 +20', '★ reach +5　★★ reach +10　★★★ reach +20')}</p>`;
+        const fm = has1 ? `<span class="forms">${FORMS[x.id].map((f, i) => `<i class="${lv >= FORM_LV[i] ? 'on' : ''}${i === 3 ? ' top' : ''}" title="+${FORM_LV[i]}">${lv >= FORM_LV[i] ? T(f[0], f[1]) : '+' + FORM_LV[i]}</i>`).join('')}</span>` : '';
+        return `<div class="cx${has1 ? '' : ' lock'}"><canvas data-shape="${x.id}"></canvas><b>${has1 ? N(x) : '???'}</b><span class="stars">${has1 ? stars(lv) : ''}</span>${fm}<span>${has1 ? T('最高 +' + lv + ' · 打过 ' + (meta.forged[x.id] || 1) + ' 件', 'Best +' + lv + ' · forged ' + (meta.forged[x.id] || 1)) : T('还没打出来过', 'Not found yet')}</span>${has1 ? `<span>${D(x)}</span>` : ''}</div>`; }).join('') + '</div></div>';
+  }).join('') + `<p class="foot">${T('★ 打到 +5　★★ 打到 +10　★★★ 打到 +20。每件兵器打到 +25、+50、+75 会进化成新形态，最后一次变化最大。', '★ reach +5　★★ reach +10　★★★ reach +20. Every weapon evolves at +25, +50 and +75; the last change is the biggest.')}</p>`;
   $('#codex').querySelectorAll('canvas').forEach((c) => { const id = c.dataset.shape, got = meta.codex[id] !== undefined; drawIcon(c, { mat: 'steel', shape: id, level: got ? Math.min(meta.codex[id], 25) : 0, mul: 1 }, !got); });
 }
 $('#codexBack').onclick = () => { if (run && $('#titleScreen').dataset.from === 'game') { hideScreens(); render(); } else showTitle(); };
 function showHelp() {
   meta.seenHelp = true; saveMeta();
   const c = (col, t) => `<b style="color:${col}">${t}</b>`;
-  const items = LANG === 'en' ? [
+  const items = (LANG === 'es' || LANG === 'de') && I18N[LANG] && I18N[LANG].help ? I18N[LANG].help(c, DAYS) : isLatin() ? [
     `You run a smithy that can forge anything: swords, cleavers, salted fish, power drills… and you owe the bank. Every ${DAYS} days a payment is due, and each one is bigger.`,
     `Tap ${c('#FFF6E0', 'Strike')} to hammer (1 stamina). The needle on the rainbow bar shows where the roll landed: ${c('var(--o-succ)', 'success')} +1, ${c('var(--o-great)', 'great')} +2, damage -1, or the item ${c('var(--o-brk)', 'breaks')}.`,
     'Higher levels are worth more (+60% per level) and break more easily. There is no level cap.',
     'The blade price moves with every strike. Sleeping closes the day; tomorrow can open higher or lower. Sale price = value × current price.',
     `Successes fill the ${c('#FFD23F', 'fire meter')}. At 10 you enter ${c('#FFD23F', 'Fever')}: 8 strikes that cost no stamina with +15% great success. The first 7 can't break or get damaged; ${c('#FF6A4D', 'the last one can')}, so decide whether to push your luck.`,
-    'Hang items on the rack to keep them, and come back with a Ward or a Heaven Hammer. Small items can be smelted into big ones.',
-    'If you can’t pay, the collector takes items from the rack first. After every payment you pick a seal and visit the Bazaar to spend spare gold.',
+    'Hang items on the rack and come back with Wards or Heaven Hammers (they stack: one per strike). Small items can be smelted into big ones. If something breaks, a Regret Pill brings it back.',
+    'Every weapon evolves at +25, +50 and +75: new name, new look. The last change (+75) is the biggest.',
+    'If you can’t pay, the collector takes items from the rack first. After every payment you pick a seal and visit the Bazaar to spend spare gold, or borrow: the bigger the loan, the higher the interest.',
     `20 weapons in 5 rarities: ${c('#E4DED3', 'white')} · ${c('#5FD068', 'green')} · ${c('#4FA6FF', 'blue')} · ${c('#F5C542', 'gold')} · ${c('#FF4D4D', 'red')}. Collecting them gives permanent bonuses (Dex, top right).`,
   ] : [
     `你开了间铁匠铺，什么都能打：剑、菜刀、咸鱼、电钻……欠了钱庄的钱，每 ${DAYS} 天还一期，一期比一期多。`,
@@ -686,8 +759,9 @@ function showHelp() {
     '等级越高越值钱（每级涨 60%），也越容易碎。等级没有上限，数字一直往上走：万、亿、兆……恒河沙、阿僧祇、那由他、不可思议、无量大数。',
     '剑价每锤都在跳，睡一觉收盘，第二天跳空开盘。卖价 = 估价 × 现价，看准了再卖。',
     `每次成功给${c('#FFD23F', '火候')}加一格（大成功加两格，受损扣两格，碎了清零）。满 10 格进入${c('#FFD23F', '上头时刻')}：接下来 8 锤不花体力、大成功率 +15%，前 7 锤不会碎也不会受损；${c('#FF6A4D', '最后一锤照常会碎')}，要不要赌你自己定。`,
-    '东西可以挂上剑架存着，等买到护剑符、天工锤再拿下来接着打；小件也能熔进大件里。',
-    '还款日钱不够，剑架上的东西会先被拿去抵债。每还清一期挑一本秘籍，再逛一次集市，把多出来的金子花掉。',
+    '东西可以挂上剑架存着，等买到护剑符、天工锤再拿下来接着打（这些道具可以叠加，用几个管几锤）；小件也能熔进大件里。碎了先别急，背包里有后悔药就能找回来。',
+    '每件兵器打到 +25、+50、+75 会进化成新形态，名字和样子都会变，最后一次（+75）变化最大。',
+    '还款日钱不够，剑架上的东西会先被拿去抵债。每还清一期挑一本秘籍，再逛一次集市，把多出来的金子花掉；缺钱也能在集市借贷，借得越多利息越高。',
     `一共 20 种兵器，分 5 档：${c('#E4DED3', '白')} · ${c('#5FD068', '绿')} · ${c('#4FA6FF', '蓝')} · ${c('#F5C542', '金')} · ${c('#FF4D4D', '红')}，收进图鉴（右上角「鉴」）有永久加成。`,
   ];
   openSheet(`<h2>${T('规矩', 'How to play')}</h2><ol class="help">${items.map((x) => `<li>${LANG === 'zht' ? toTrad(x) : x}</li>`).join('')}</ol><p>${T('电脑上：空格 = 锤，S = 出售，A = 上架，E = 睡觉', 'Keyboard: Space = strike, S = sell, A = rack, E = sleep')}</p><div class="btns"><button class="btn" id="mOk" type="button">${T('开干', "Let's go")}</button></div>`);
@@ -723,6 +797,7 @@ btnS.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefa
 $('#btnSell').onclick = sell;
 $('#btnStore').onclick = storeSword;
 $('#btnRest').onclick = rest;
+$('#regretBtn').onclick = () => { if (run && run.lastBroken && run.bag.hui) { ensureAudio(); useItem('hui'); } };
 $('#seals').addEventListener('click', (e) => { const b = e.target.closest('.seal'); if (b) toast(N(RMAP[b.dataset.id]) + T('：', ': ') + D(RMAP[b.dataset.id])); });
 $('#rack').addEventListener('click', (e) => { const b = e.target.closest('.slot[data-i]'); if (b) rackAction(+b.dataset.i); });
 $('#bag').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; if (b.dataset.shop) shopSheet(); else itemSheet(b.dataset.id); });
@@ -747,7 +822,7 @@ function render() {
   $('#gap').textContent = run.gold >= q ? T('够还了', 'Covered') : T((left ? `${left} 天后` : '明早') + '收账，还差 ', (left ? `Due in ${left} days, ` : 'Due tomorrow, ') + 'short ') + fmt(q - run.gold);
   $('#meter').style.width = clamp(run.gold / q * 100, 0, 100) + '%';
   const tierEl = $('#sTier'); tierEl.textContent = t.name; tierEl.style.color = t.color;
-  const rq = RARITY[wp.rar]; $('#sName').innerHTML = `<span class="rq" style="color:${rq.color};border-color:${rq.color}">${LANG === 'en' ? N(rq) : RK(rq) + '·' + N(rq)}</span>${N(MAT[s.mat])} · <span style="color:${rq.color}">${wname(s)}</span>${s.gilded ? T(' · 金漆', ' · lacquered') : ''}`;
+  const rq = RARITY[wp.rar]; $('#sName').innerHTML = `<span class="rq" style="color:${rq.color};border-color:${rq.color}">${isLatin() ? N(rq) : RK(rq) + '·' + N(rq)}</span>${N(MAT[s.mat])} · <span style="color:${rq.color}">${wname(s)}</span>${s.gilded ? T(' · 金漆', ' · lacquered') : ''}`;
   const lv = $('#sLevel'); lv.textContent = '+' + s.level; lv.style.color = s.level ? t.color : '#F3E9DC';
   const lk = s.level + ':' + s.name;
   if (lastLevel !== null && lastLevel !== lk) { lv.classList.remove('punch'); void lv.offsetWidth; lv.classList.add('punch'); }
@@ -759,7 +834,7 @@ function render() {
   const colors = ['--o-brk', '--o-dmg', '--o-keep', '--o-succ', '--o-great'];
   $('#olegend').innerHTML = parts.map((p, i) => `<span><b style="color:var(${colors[i]})">${pct(p)}</b>${labels[i]}</span>`).join('');
   const bf = [], b = run.buffs;
-  if (b.hu) bf.push(T('护剑符：下一锤不会碎', "Ward: next strike can't break")); if (b.zhu) bf.push(T('祝福油：下一锤成功率 +25%', 'Blessing: next strike +25%')); if (b.tian) bf.push(T('天工锤：下一锤必成', 'Heaven Hammer: next strike succeeds')); if (b.cui > 0) bf.push(T('淬火水：还剩 ' + b.cui + ' 锤', 'Quench Water: ' + b.cui + ' strikes left')); if (b.ya) bf.push(T('牙行帖：下次卖 +40%', "Broker's Note: next sale +40%"));
+  if (b.hu) bf.push(T('护剑符：接下来 ' + (+b.hu) + ' 锤不会碎', "Ward: next " + (+b.hu) + " strikes can't break")); if (b.zhu) bf.push(T('祝福油：接下来 ' + (+b.zhu) + ' 锤成功率 +25%', 'Blessing: next ' + (+b.zhu) + ' strikes +25%')); if (b.tian) bf.push(T('天工锤：接下来 ' + (+b.tian) + ' 锤必成', 'Heaven Hammer: next ' + (+b.tian) + ' strikes succeed')); if (b.cui > 0) bf.push(T('淬火水：还剩 ' + b.cui + ' 锤', 'Quench Water: ' + b.cui + ' strikes left')); if (b.ya) bf.push(T('牙行帖：下次卖 +40%', "Broker's Note: next sale +40%"));
   bf.push(N(wp) + T('：', ': ') + D(wp).replace(/^[^：:]*[：:]\s*/, ''));
   $('#buffs').innerHTML = bf.map((x) => `<span>${x}</span>`).join('');
   $('#stam').textContent = run.fever === 1 ? T('最后一锤 · 会碎！', 'Last one · can break!') : run.fever > 0 ? T('上头！还剩 ' + run.fever + ' 锤不花体力', 'FEVER! ' + run.fever + ' free strikes') : T('体力 ', 'Stamina ') + run.stam + '/' + maxStam();
@@ -795,6 +870,8 @@ function render() {
   document.querySelector('[data-tab="rack"]').innerHTML = T('剑架', 'Rack') + (run.rack.length ? `<span class="n">${run.rack.length}</span>` : '');
   $('#seals').innerHTML = run.relics.length ? run.relics.map((id) => `<button class="seal" type="button" data-id="${id}" title="${N(RMAP[id])}: ${D(RMAP[id])}" aria-label="${N(RMAP[id])}">${RMAP[id].ch}</button>`).join('') : `<span class="empty">${T('还没有秘籍。每还清一期能挑一本。', 'No seals yet. You get one after each payment.')}</span>`;
   $('#log').innerHTML = run.log.map((e) => `<div class="${e.length >= 3 ? e[2] : e[1]}">${logText(e)}</div>`).join('');
+  const rg = $('#regretBtn'), canUndo = !!(run.lastBroken && run.bag.hui);
+  rg.hidden = !canUndo; if (canUndo) rg.textContent = T('吃后悔药 ×' + run.bag.hui + '：找回 +' + run.lastBroken.level + ' ' + formName(run.lastBroken.shape, run.lastBroken.level), 'Regret Pill ×' + run.bag.hui + ': undo +' + run.lastBroken.level + ' ' + formName(run.lastBroken.shape, run.lastBroken.level));
   const cb = $('#combo');
   if (run.streak >= 2) { const was = cb.dataset.n; cb.innerHTML = `×${run.streak}<small>${T('连击', 'COMBO')}</small>`; cb.classList.add('on'); if (was !== String(run.streak)) { cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump'); } cb.dataset.n = run.streak; }
   else { cb.classList.remove('on'); cb.dataset.n = ''; }
@@ -1004,7 +1081,12 @@ const WDRAW = {
 };
 // renders a weapon through an offscreen canvas so overlays (heat, white flash, silhouette) follow any outline
 const off = document.createElement('canvas'), octx = off.getContext('2d');
+const off2 = document.createElement('canvas'), octx2 = off2.getContext('2d');
+const RUNES = ['天', '道', '神', '龙', '玄', '灵', '金', '雷'];
 function renderWeapon(c, s, X, Y, L, u, o = {}) {
+  const st = o.sil ? 0 : stageOf(s.level), t0 = o.t || 0;
+  if (st >= 3) { const k = o.icon ? 1.08 : 1.18; X -= L * (k - 1) / 2; L *= k; u *= k; } // ascended forms grow
+  if (st >= 3 && !o.icon) drawWings(c, X + L * 0.42, Y, L, u, t0, o.alpha ?? 1);
   const pad = u * 2, w = L + pad * 2, h = u * 9.5, d = o.dpr || Math.min(devicePixelRatio || 1, 2);
   off.width = Math.ceil(w * d); off.height = Math.ceil(h * d);
   octx.setTransform(d, 0, 0, d, 0, 0); octx.clearRect(0, 0, w, h);
@@ -1013,19 +1095,54 @@ function renderWeapon(c, s, X, Y, L, u, o = {}) {
   if (o.sil) { octx.fillStyle = '#2E2723'; octx.fillRect(0, 0, w, h); }
   else {
     if (o.heat > 0.02) { octx.fillStyle = `rgba(255,${(120 + 80 * o.heat) | 0},40,${o.heat * 0.5})`; octx.fillRect(0, 0, w, h); }
+    if (st >= 2) { const gg = octx.createLinearGradient(0, 0, w, 0), ph = (t0 / 1600) % 1; // spirit wash; ascended forms get a moving rainbow sheen
+      if (st >= 3) ['#FF8FD8', '#FFE38A', '#8FFFD2', '#8FC8FF', '#D9A2FF', '#FF8FD8'].forEach((col, i) => gg.addColorStop(((i / 5) + ph) % 1, col));
+      else { const tc = tierOf(s.level).color; gg.addColorStop(0, tc); gg.addColorStop(0.5, '#FFFFFF'); gg.addColorStop(1, tc); }
+      octx.globalAlpha = st >= 3 ? 0.42 : 0.26; octx.fillStyle = gg; octx.fillRect(0, 0, w, h); octx.globalAlpha = 1; }
     if (o.white > 0.01) { octx.fillStyle = `rgba(255,255,255,${o.white})`; octx.fillRect(0, 0, w, h); }
   }
   octx.globalCompositeOperation = 'source-over';
   const tier = tierOf(s.level);
+  if (st >= 1) { // gold (or white-gold) outline around any silhouette: tint a copy and stamp it around the weapon
+    off2.width = off.width; off2.height = off.height; octx2.setTransform(1, 0, 0, 1, 0, 0); octx2.clearRect(0, 0, off2.width, off2.height);
+    octx2.drawImage(off, 0, 0); octx2.globalCompositeOperation = 'source-in'; octx2.fillStyle = st >= 3 ? '#FFF6D0' : st >= 2 ? '#E2C2FF' : '#F2C14E'; octx2.fillRect(0, 0, off2.width, off2.height); octx2.globalCompositeOperation = 'source-over';
+    const r1 = Math.max(1, u * (st >= 3 ? 0.16 : 0.1)); c.save(); c.globalAlpha = (o.alpha ?? 1) * 0.95;
+    for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; c.drawImage(off2, X - pad + Math.cos(a) * r1, Y - h / 2 + Math.sin(a) * r1, w, h); }
+    c.restore();
+  }
   c.save(); c.globalAlpha = o.alpha ?? 1;
   if (!o.sil && s.level >= 5) { c.shadowColor = tier.color; c.shadowBlur = Math.min(46, 6 + s.level * 1.1) * (o.glow ?? 1) * (0.85 + 0.15 * Math.sin((o.t || 0) / 300)); }
   c.drawImage(off, X - pad, Y - h / 2, w, h);
   c.restore();
+  if (st >= 2 && o.motes !== false) { // spirit wisps orbit the blade
+    const n = st >= 3 ? 6 : 3;
+    for (let i = 0; i < n; i++) { const a = t0 / 700 + i * 6.283 / n, x = X + L * 0.42 + Math.cos(a) * L * 0.46, y = Y + Math.sin(a * 1.3) * u * 2.6;
+      const rg = c.createRadialGradient(x, y, 0, x, y, u * 0.9); rg.addColorStop(0, 'rgba(255,255,255,.95)'); rg.addColorStop(1, st >= 3 ? 'rgba(255,200,120,0)' : 'rgba(182,128,236,0)');
+      c.fillStyle = rg; c.globalAlpha = o.alpha ?? 1; c.beginPath(); c.arc(x, y, u * 0.9, 0, 7); c.fill(); }
+    c.globalAlpha = 1;
+  }
+  if (st >= 3 && o.motes !== false) { // halo + orbiting runes for the final form
+    c.save(); c.globalAlpha = (o.alpha ?? 1) * (0.7 + 0.3 * Math.sin(t0 / 300)); c.strokeStyle = '#FFE9A8'; c.lineWidth = Math.max(2, u * 0.18); c.shadowColor = '#FFD27A'; c.shadowBlur = 18;
+    c.beginPath(); c.ellipse(X + L * 0.42, Y - u * 3.2, L * 0.16, u * 0.7, 0, 0, 7); c.stroke(); c.restore();
+    c.save(); c.font = `400 ${Math.max(10, u * 1.1)}px "Ma Shan Zheng", serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    RUNES.forEach((ch, i) => { const a = -t0 / 1400 + i * 6.283 / RUNES.length; c.fillStyle = '#FFE9A8'; c.globalAlpha = (o.alpha ?? 1) * (0.55 + 0.45 * Math.sin(t0 / 250 + i)); c.fillText(ch, X + L * 0.42 + Math.cos(a) * L * 0.6, Y + Math.sin(a) * u * 3.4); });
+    c.restore();
+  }
   if (!o.sil && s.level >= 30 && o.motes !== false) {
     const n = Math.min(14, 4 + ((s.level - 30) >> 2)), t = o.t || 0;
     for (let i = 0; i < n; i++) { const a = t / 900 + i * 6.283 / n; c.fillStyle = tier.color; c.globalAlpha = (o.alpha ?? 1) * (0.5 + 0.5 * Math.sin(t / 200 + i)); c.beginPath(); c.arc(X + L * 0.4 + Math.cos(a) * L * 0.5, Y + Math.sin(a) * u * 2.4, Math.max(1.2, u * 0.12), 0, 7); c.fill(); }
     c.globalAlpha = 1;
   }
+}
+function drawWings(c, cx, cy, L, u, t, alpha) { // ascended forms: two fans of light feathers behind the weapon
+  c.save(); c.globalAlpha = alpha * 0.85;
+  for (const side of [-1, 1]) for (let k = 0; k < 7; k++) {
+    const flap = Math.sin(t / 420) * 0.12, a = -Math.PI / 2 + side * (0.35 + k * 0.17 + flap), len = L * (0.42 - k * 0.025);
+    const x2 = cx + Math.cos(a) * len, y2 = cy - u + Math.sin(a) * len * 0.62, g = c.createLinearGradient(cx, cy, x2, y2);
+    g.addColorStop(0, 'rgba(255,240,200,.0)'); g.addColorStop(0.5, 'rgba(255,236,180,.55)'); g.addColorStop(1, 'rgba(255,255,255,.85)');
+    c.fillStyle = g; c.beginPath(); c.moveTo(cx, cy - u); c.quadraticCurveTo((cx + x2) / 2 + side * u * 1.2, (cy + y2) / 2 - u, x2, y2); c.quadraticCurveTo((cx + x2) / 2, (cy + y2) / 2 + u * 0.8, cx, cy - u * 0.4); c.fill();
+  }
+  c.restore();
 }
 function drawIcon(cvs, s, sil = false) {
   if (!cvs) return;
@@ -1033,7 +1150,7 @@ function drawIcon(cvs, s, sil = false) {
   cvs.width = Math.round(w * d); cvs.height = Math.round(h * d);
   const c = cvs.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, w, h);
   const ext = WP[s.shape].ext, L = w * 0.86, u = Math.max(3, Math.min(L * 0.06, (h * 0.86) / (ext[0] + ext[1])));
-  renderWeapon(c, s, (w - L) / 2, h / 2 + (ext[0] - ext[1]) * u / 2, L, u, { sil, glow: 0.35, motes: false, dpr: d });
+  renderWeapon(c, s, (w - L) / 2, h / 2 + (ext[0] - ext[1]) * u / 2, L, u, { sil, glow: 0.35, motes: false, dpr: d, icon: true });
 }
 
 // ---------- scene ----------
@@ -1073,6 +1190,8 @@ const fx = {
     this.pop(ev.tierUp ? tierOf(ev.level).name + '!' : txt[0], ev.tierUp ? tierOf(ev.level).color : txt[1], r === 'great' || r === 'brk' || ev.tierUp);
     if (ev.note) this.pop2(typeof ev.note === 'function' ? ev.note() : ev.note, '#F2C14E'); else if (ev.nearBreak) this.pop2(T('好险！差一点就碎了', 'Close call!'), '#F08A3C');
     if (ev.feverStart) setTimeout(() => this.feverOn(), 160);
+    if (ev.evolved && run) setTimeout(() => this.evolve(run.sword), 220);
+    if (ev.broke) this.pop2(T('还有后悔药，点画面上的按钮能救回来', 'You have a Regret Pill: tap the button to undo'), '#B680EC');
     if (ev.lastWarn) this.pop2(T('最后一锤！这一锤会碎', 'Last fever strike: it can break!'), '#FF6A4D');
     else if (ev.feverEnd) this.pop2(r === 'brk' ? T('上头一时爽……', 'Rode it too far…') : T('冷静下来了', 'Cooling down'), '#A8988A');
     sfx(r, ev.streak);
@@ -1085,6 +1204,16 @@ const fx = {
     for (let i = 0; i < 80; i++) { const a = R() * 6.283, sp = 150 + R() * 380; this.parts.push({ x: g.cx, y: g.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120, l: 0.9 + R() * 0.6, c: R() < 0.5 ? '#FFD23F' : '#FF7A1A', s: 3 }); }
     this.pop(T('上头时刻！', 'FEVER!'), '#FFD23F', true); sfx('fever'); vib([40, 30, 40, 30, 120]);
   },
+  evolve(sw) {
+    const st = stageOf(sw.level), g = geo(), big = st >= 3;
+    this.flash = big ? 0.7 : 0.45; this.heat = 1; if (!REDUCE) { this.slowUntil = performance.now() + (big ? 1100 : 700); this.zoomTo = big ? 1.22 : 1.14; this.shake = big ? 1.4 : 0.8; }
+    const cols = big ? ['#FFFFFF', '#FFE38A', '#FF8FD8', '#8FE8FF'] : st === 2 ? ['#B680EC', '#FFFFFF', '#8FE8FF'] : ['#F2C14E', '#FFFFFF'];
+    for (let i = 0; i < (big ? 160 : 90); i++) { const a = R() * 6.283, sp = 120 + R() * (big ? 520 : 360); this.parts.push({ x: g.cx, y: g.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120, l: 1 + R() * 0.8, c: pick(cols), s: big ? 3.5 : 2.5 }); }
+    this.pop(T('进化！', 'EVOLVED!') + formName(sw.shape, sw.level), big ? '#FFE38A' : st === 2 ? '#C9A2FF' : '#F2C14E', true);
+    this.pop2(T(STAGES[st][0] + '形态', STAGES[st][1] + ' form'), '#FFFFFF');
+    sfx('evolve', st); vib(big ? [60, 40, 60, 40, 200] : [40, 30, 90]);
+  },
+  regret() { const g = geo(); this.flash = 0.25; for (let i = 0; i < 50; i++) { const a = R() * 6.283, sp = 80 + R() * 240; this.parts.push({ x: g.cx + Math.cos(a) * 140, y: g.y + Math.sin(a) * 60, vx: -Math.cos(a) * sp, vy: -Math.sin(a) * sp, l: 0.6 + R() * 0.4, c: R() < 0.5 ? '#B680EC' : '#E8D8FF', s: 2.5 }); } this.pop(T('后悔药！回来了', 'Regret Pill: it is back!'), '#C9A2FF', true); sfx('rare', 2); },
   reveal(r, name) {
     const rq = RARITY[r]; this.pop2((r >= 4 ? T('神话！', 'MYTHIC! ') : r >= 3 ? T('传说！', 'LEGENDARY! ') : T('稀有！', 'Rare! ')) + name, rq.color);
     if (r >= 3) { const g = geo(); this.flash = 0.25; if (!REDUCE) { this.slowUntil = performance.now() + 450; this.zoomTo = 1.1; }
@@ -1226,6 +1355,7 @@ function sfx(k, streak = 0) {
       case 'great': { const p = comboPitch(streak); [784, 988, 1175, 1568].forEach((f, i) => tone(f * p, t + i * 0.06, 0.6, 'sine', 0.07)); noise(t, 0.5, 0.05, 6000, 0.5); break; }
       case 'keep': tone(220, t, 0.12, 'triangle', 0.05); break;
       case 'fever': [392, 494, 587, 784, 988, 1175, 1568].forEach((f, i) => tone(f, t + i * 0.05, 0.5, 'sawtooth', 0.035)); [0, 0.12, 0.24, 0.36].forEach((d) => tone(55, t + d, 0.15, 'sine', 0.3)); noise(t, 0.8, 0.08, 5000, 0.4, 12000); break;
+      case 'evolve': { const top = streak >= 3; [262, 330, 392, 523, 659, 784, 1046, 1318].slice(0, top ? 8 : 6).forEach((f, i) => tone(f * (top ? 1 : 1.5), t + i * 0.08, 0.9, 'triangle', 0.07)); [0, 0.16, 0.32].forEach((d) => tone(49, t + d, 0.3, 'sine', 0.3)); noise(t, 1.2, 0.08, 4000, 0.4, 14000); break; }
       case 'rare': [523, 659, 784, 1046, 1318, 1568].slice(0, streak >= 4 ? 6 : 5).forEach((f, i) => tone(f, t + i * 0.07, 0.7, 'triangle', 0.07)); noise(t, 0.6, 0.06, 7000, 0.5); break;
       case 'dmg': tone(110, t, 0.35, 'sawtooth', 0.05); noise(t, 0.25, 0.14, 700, 1); break;
       case 'brk': noise(t, 0.7, 0.45, 3000, 0.6, 300); tone(60, t, 0.6, 'sawtooth', 0.08); break;
@@ -1257,5 +1387,5 @@ if (DEMO) {
   const w = new URLSearchParams(location.search).get('w'); run.sword = makeSword(WP[w] ? w : 'yu'); setTab('market');
   setInterval(demoTick, 380);
 } else if (run) { showTitle(); render(); } else showTitle();
-window.__game = { get run() { return run; }, get meta() { return meta; }, odds, quota, value, fmt, WEAPONS, drawIcon, render, renderWeapon, setLang, market, settle };
+window.__game = { maskKey, inLang, get run() { return run; }, get meta() { return meta; }, odds, quota, value, fmt, WEAPONS, drawIcon, render, renderWeapon, setLang, market, settle };
 })();
