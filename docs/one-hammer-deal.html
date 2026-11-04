@@ -25,7 +25,9 @@ body{background:var(--bg);color:var(--text);font:15px/1.5 var(--sans);overflow:h
 button{font-family:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
-#app{height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* --top-safe grows in full-screen app webviews (TapTap) so the bar clears the camera hole and the host's floating buttons; see applyTopGap() */
+:root{--top-safe:env(safe-area-inset-top,0px)}
+#app{height:100%;display:flex;flex-direction:column;padding-top:var(--top-safe);padding-bottom:env(safe-area-inset-bottom,0px)}
 .bar{flex:none}
 .scene{flex:none;height:max(230px,46vh)}
 .ticker{display:none}
@@ -124,7 +126,7 @@ button{font-family:inherit;color:inherit}
 .log .g{color:var(--o-great)}.log .s{color:var(--o-succ)}.log .b{color:var(--o-brk)}.log .d{color:var(--o-dmg)}.log .c{color:var(--gold)}
 
 /* screens & modals */
-.screen,.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px max(18px,env(safe-area-inset-right,0px)) 24px max(18px,env(safe-area-inset-left,0px));overflow-y:auto}
+.screen,.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:calc(24px + var(--top-safe)) max(18px,env(safe-area-inset-right,0px)) 24px max(18px,env(safe-area-inset-left,0px));overflow-y:auto}
 .screen{background:radial-gradient(ellipse at 50% 85%,rgba(255,106,26,.28),transparent 60%),var(--bg)}
 .modal{background:rgba(10,8,7,.78);backdrop-filter:blur(3px)}
 .sheet{width:min(460px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:14px;box-shadow:0 30px 60px -20px #000}
@@ -276,7 +278,7 @@ button{font-family:inherit;color:inherit}
 .tut-tip{position:fixed;pointer-events:none;text-align:center}
 .tut-tip p{display:inline-block;margin:0;background:#FFF6E0;color:#1A0E06;font:800 17px/1.35 var(--sans);padding:10px 16px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .tut-tip small{display:block;margin-top:8px;color:rgba(255,246,224,.75);font-size:12px}
-.tut-skip{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:12px;appearance:none;border:1px solid rgba(255,246,224,.4);background:rgba(20,14,10,.75);color:#FFF6E0;font:700 13px var(--sans);padding:7px 14px;border-radius:99px;cursor:pointer}
+.tut-skip{position:fixed;top:calc(12px + var(--top-safe));right:12px;appearance:none;border:1px solid rgba(255,246,224,.4);background:rgba(20,14,10,.75);color:#FFF6E0;font:700 13px var(--sans);padding:7px 14px;border-radius:99px;cursor:pointer}
 .tut-dots{position:fixed;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom,0px));display:flex;gap:6px;justify-content:center;pointer-events:none}
 .tut-dots i{width:7px;height:7px;border-radius:4px;background:rgba(255,246,224,.3)}
 .tut-dots i.on{background:var(--gold);width:18px}
@@ -903,6 +905,7 @@ window.I18N = {
 "Today": "Heute",
 "Tomorrow opens at {0} or higher": "Morgen Eröffnung bei {0} oder höher",
 "Took a bite, no stamina spent": "Ein Bissen, keine Ausdauer verbraucht",
+"Top gap (clear the camera): ": "Abstand oben (Kamera): ",
 "Tough leek: kept the level": "Zäher Lauch: Stufe gehalten",
 "Tough: damage has a {0} chance to keep the level": "Zäh: Schaden behält zu {0} die Stufe",
 "Treasured": "Kostbar",
@@ -1457,6 +1460,7 @@ window.I18N = {
 "Today": "Hoy",
 "Tomorrow opens at {0} or higher": "Mañana abre a {0} o más",
 "Took a bite, no stamina spent": "Un bocado, sin gastar energía",
+"Top gap (clear the camera): ": "Margen superior (cámara): ",
 "Tough leek: kept the level": "Puerro duro: mantuvo el nivel",
 "Tough: damage has a {0} chance to keep the level": "Duro: el daño tiene un {0} de mantener el nivel",
 "Treasured": "Atesorada",
@@ -2011,6 +2015,7 @@ window.I18N = {
 "Today": "Aujourd'hui",
 "Tomorrow opens at {0} or higher": "Demain ouvre à {0} ou plus",
 "Took a bite, no stamina spent": "Une bouchée, aucune endurance dépensée",
+"Top gap (clear the camera): ": "Marge en haut (caméra) : ",
 "Tough leek: kept the level": "Poireau coriace : niveau conservé",
 "Tough: damage has a {0} chance to keep the level": "Coriace : {0} de chances de garder le niveau en cas de dégât",
 "Treasured": "Précieuse",
@@ -2565,6 +2570,7 @@ window.I18N = {
 "Today": "当日",
 "Tomorrow opens at {0} or higher": "明日は {0} 以上で寄り付く",
 "Took a bite, no stamina spent": "ひと口かじった、体力は減らない",
+"Top gap (clear the camera): ": "上部の余白（カメラ回避）：",
 "Tough leek: kept the level": "しぶといネギ：段階キープ",
 "Tough: damage has a {0} chance to keep the level": "しぶとい：損傷時 {0} の確率で段階キープ",
 "Treasured": "宝器",
@@ -3119,6 +3125,7 @@ window.I18N = {
 "Today": "당일",
 "Tomorrow opens at {0} or higher": "내일은 {0} 이상에서 시작",
 "Took a bite, no stamina spent": "한 입 베어 물었다, 체력 소모 없음",
+"Top gap (clear the camera): ": "상단 여백 (카메라 피하기): ",
 "Tough leek: kept the level": "질긴 대파: 단계 유지",
 "Tough: damage has a {0} chance to keep the level": "질김: 손상 시 {0} 확률로 단계 유지",
 "Treasured": "보기",
@@ -3673,6 +3680,7 @@ window.I18N = {
 "Today": "Hoje",
 "Tomorrow opens at {0} or higher": "Amanhã abre em {0} ou mais",
 "Took a bite, no stamina spent": "Uma mordida, sem gastar energia",
+"Top gap (clear the camera): ": "Margem superior (câmera): ",
 "Tough leek: kept the level": "Alho-poró duro: manteve o nível",
 "Tough: damage has a {0} chance to keep the level": "Duro: o dano tem {0} de chance de manter o nível",
 "Treasured": "Preciosa",
@@ -4227,6 +4235,7 @@ window.I18N = {
 "Today": "Сегодня",
 "Tomorrow opens at {0} or higher": "Завтра откроется на {0} или выше",
 "Took a bite, no stamina spent": "Откусил кусочек, выносливость не потрачена",
+"Top gap (clear the camera): ": "Отступ сверху (камера): ",
 "Tough leek: kept the level": "Крепкий лук-порей: уровень сохранён",
 "Tough: damage has a {0} chance to keep the level": "Крепкий: при уроне шанс {0} сохранить уровень",
 "Treasured": "Драгоценный",
@@ -4369,7 +4378,7 @@ window.I18N.ru.help = (c, D) => [
 
 </script>
 <script>
-// 一锤子买卖 / One Hammer Deal v0.12 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.13 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -5128,7 +5137,7 @@ const shopOpen = () => !!(meta.ends || meta.totalFame > 0 || meta.best.period > 
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false; $('#tShop').hidden = !shopOpen();
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.12 · 存档在这台设备的浏览器里', 'v0.12 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.13 · 存档在这台设备的浏览器里', 'v0.13 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -5356,6 +5365,10 @@ $('#menuBtn').onclick = () => {
   $('#mVib').onclick = () => { meta.vibe = !meta.vibe; saveMeta(); vib(30); $('#mVib').textContent = T('震动：', 'Vibration: ') + (meta.vibe ? T('开', 'on') : T('关', 'off')); };
   $('#mRules').onclick = showHelp;
   $('#mHome').onclick = showTitle;
+  const tg = document.createElement('button'); tg.className = 'btn ghost'; tg.type = 'button'; tg.id = 'mTop';
+  const tgl = () => T('顶部下移（躲开摄像头）：', 'Top gap (clear the camera): ') + (topGapOn() ? T('开', 'on') : T('关', 'off'));
+  tg.textContent = tgl(); tg.onclick = () => { meta.topGap = !topGapOn(); saveMeta(); applyTopGap(); tg.textContent = tgl(); };
+  $('#sheet .btns').insertBefore(tg, $('#mRules'));
   const q = document.createElement('button'); q.className = 'btn ghost danger'; q.type = 'button'; q.id = 'mQuit'; q.textContent = T('收摊 · 结束这一局', 'Close shop · end this run'); q.onclick = closeShop;
   if (run) $('#sheet .btns').appendChild(q);
 };
@@ -5963,6 +5976,15 @@ function demoTick() {
   }
   strike();
 }
+// full-screen app webviews (TapTap and similar) draw over the camera hole and their own floating buttons at the top right,
+// so leave room there. Detected as: touch screen, portrait, page as tall as the screen (no status bar or browser bars). Can be switched in Settings.
+const IMMERSIVE = (matchMedia('(pointer:coarse)').matches && innerHeight > innerWidth && screen.height - innerHeight < 60) || /TapTap|TapMini/i.test(navigator.userAgent);
+const topGapOn = () => (meta.topGap == null ? IMMERSIVE : !!meta.topGap);
+function applyTopGap() {
+  document.documentElement.style.setProperty('--top-safe', topGapOn() ? 'max(calc(env(safe-area-inset-top, 0px) + 40px), 78px)' : 'env(safe-area-inset-top, 0px)');
+  window.dispatchEvent(new Event('resize'));
+}
+if (!DEMO) applyTopGap();
 applyStatic();
 if (DEMO) {
   meta.seenHelp = true; meta.muted = true;

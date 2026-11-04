@@ -25,7 +25,9 @@ body{background:var(--bg);color:var(--text);font:15px/1.5 var(--sans);overflow:h
 button{font-family:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
-#app{height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* --top-safe grows in full-screen app webviews (TapTap) so the bar clears the camera hole and the host's floating buttons; see applyTopGap() */
+:root{--top-safe:env(safe-area-inset-top,0px)}
+#app{height:100%;display:flex;flex-direction:column;padding-top:var(--top-safe);padding-bottom:env(safe-area-inset-bottom,0px)}
 .bar{flex:none}
 .scene{flex:none;height:max(230px,46vh)}
 .ticker{display:none}
@@ -124,7 +126,7 @@ button{font-family:inherit;color:inherit}
 .log .g{color:var(--o-great)}.log .s{color:var(--o-succ)}.log .b{color:var(--o-brk)}.log .d{color:var(--o-dmg)}.log .c{color:var(--gold)}
 
 /* screens & modals */
-.screen,.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px max(18px,env(safe-area-inset-right,0px)) 24px max(18px,env(safe-area-inset-left,0px));overflow-y:auto}
+.screen,.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:calc(24px + var(--top-safe)) max(18px,env(safe-area-inset-right,0px)) 24px max(18px,env(safe-area-inset-left,0px));overflow-y:auto}
 .screen{background:radial-gradient(ellipse at 50% 85%,rgba(255,106,26,.28),transparent 60%),var(--bg)}
 .modal{background:rgba(10,8,7,.78);backdrop-filter:blur(3px)}
 .sheet{width:min(460px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:14px;box-shadow:0 30px 60px -20px #000}
@@ -276,7 +278,7 @@ button{font-family:inherit;color:inherit}
 .tut-tip{position:fixed;pointer-events:none;text-align:center}
 .tut-tip p{display:inline-block;margin:0;background:#FFF6E0;color:#1A0E06;font:800 17px/1.35 var(--sans);padding:10px 16px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .tut-tip small{display:block;margin-top:8px;color:rgba(255,246,224,.75);font-size:12px}
-.tut-skip{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:12px;appearance:none;border:1px solid rgba(255,246,224,.4);background:rgba(20,14,10,.75);color:#FFF6E0;font:700 13px var(--sans);padding:7px 14px;border-radius:99px;cursor:pointer}
+.tut-skip{position:fixed;top:calc(12px + var(--top-safe));right:12px;appearance:none;border:1px solid rgba(255,246,224,.4);background:rgba(20,14,10,.75);color:#FFF6E0;font:700 13px var(--sans);padding:7px 14px;border-radius:99px;cursor:pointer}
 .tut-dots{position:fixed;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom,0px));display:flex;gap:6px;justify-content:center;pointer-events:none}
 .tut-dots i{width:7px;height:7px;border-radius:4px;background:rgba(255,246,224,.3)}
 .tut-dots i.on{background:var(--gold);width:18px}

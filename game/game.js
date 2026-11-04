@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.12 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.13 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -757,7 +757,7 @@ const shopOpen = () => !!(meta.ends || meta.totalFame > 0 || meta.best.period > 
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false; $('#tShop').hidden = !shopOpen();
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.12 · 存档在这台设备的浏览器里', 'v0.12 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.13 · 存档在这台设备的浏览器里', 'v0.13 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -985,6 +985,10 @@ $('#menuBtn').onclick = () => {
   $('#mVib').onclick = () => { meta.vibe = !meta.vibe; saveMeta(); vib(30); $('#mVib').textContent = T('震动：', 'Vibration: ') + (meta.vibe ? T('开', 'on') : T('关', 'off')); };
   $('#mRules').onclick = showHelp;
   $('#mHome').onclick = showTitle;
+  const tg = document.createElement('button'); tg.className = 'btn ghost'; tg.type = 'button'; tg.id = 'mTop';
+  const tgl = () => T('顶部下移（躲开摄像头）：', 'Top gap (clear the camera): ') + (topGapOn() ? T('开', 'on') : T('关', 'off'));
+  tg.textContent = tgl(); tg.onclick = () => { meta.topGap = !topGapOn(); saveMeta(); applyTopGap(); tg.textContent = tgl(); };
+  $('#sheet .btns').insertBefore(tg, $('#mRules'));
   const q = document.createElement('button'); q.className = 'btn ghost danger'; q.type = 'button'; q.id = 'mQuit'; q.textContent = T('收摊 · 结束这一局', 'Close shop · end this run'); q.onclick = closeShop;
   if (run) $('#sheet .btns').appendChild(q);
 };
@@ -1592,6 +1596,15 @@ function demoTick() {
   }
   strike();
 }
+// full-screen app webviews (TapTap and similar) draw over the camera hole and their own floating buttons at the top right,
+// so leave room there. Detected as: touch screen, portrait, page as tall as the screen (no status bar or browser bars). Can be switched in Settings.
+const IMMERSIVE = (matchMedia('(pointer:coarse)').matches && innerHeight > innerWidth && screen.height - innerHeight < 60) || /TapTap|TapMini/i.test(navigator.userAgent);
+const topGapOn = () => (meta.topGap == null ? IMMERSIVE : !!meta.topGap);
+function applyTopGap() {
+  document.documentElement.style.setProperty('--top-safe', topGapOn() ? 'max(calc(env(safe-area-inset-top, 0px) + 40px), 78px)' : 'env(safe-area-inset-top, 0px)');
+  window.dispatchEvent(new Event('resize'));
+}
+if (!DEMO) applyTopGap();
 applyStatic();
 if (DEMO) {
   meta.seenHelp = true; meta.muted = true;
