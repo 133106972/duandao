@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.11 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.12 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -319,10 +319,14 @@ const maxStam = () => 18 + mods().stamAdd;
 const rackCap = () => 3 + ulv('rack') + (run ? run.extraSlots : 0);
 // two difficulties, picked when a run starts. Hard: debt starts at 1000 and grows ×5 a period, breaks come sooner, loans cost more, fame ×1.5.
 // tuned with tools/sim-balance.js: the autopilot (no items, loans or bazaar) goes broke before period 5 in roughly a third of hard runs.
-const DIFF = { easy: { base: 50, growth: 2.5, brk: 0.015, brkCap: 0.45, loanMul: 1, fame: 1 }, hard: { base: 1000, growth: 5, brk: 0.02, brkCap: 0.5, loanMul: 1.5, fame: 1.5 } };
+const DIFF = { easy: { base: 50, growth: 2.5, brk: 0.015, brkCap: 0.45, loanMul: 1, fame: 1 }, hard: { base: 1000, growth: 5, brk: 0.02, brkCap: 0.5, loanMul: 1.5, fame: 1.5, sellCap: 0 } }; // sellCap: max sales a day (0 = no limit). Simulated in v0.12: a cap of 3-5 did not make hard harder, so it is off
 const dif = () => DIFF[(run && run.diff) || 'easy'] || DIFF.easy;
 const diffName = (d) => (d === 'hard' ? T('困难', 'Hard') : T('新手', 'Easy'));
 const loanRate = (ln) => ln.rate * dif().loanMul;
+// hard only: buyers are limited, so only a few sales a day (the collector's seizures don't count)
+const sellCap = () => dif().sellCap || 0;
+const salesLeft = () => (sellCap() ? Math.max(0, sellCap() - (run.soldToday || 0)) : Infinity);
+function canSell() { if (salesLeft() > 0) return true; toast(T('今天的买家走光了（每天最多卖 ' + sellCap() + ' 件），明天再来', 'No more buyers today (max ' + sellCap() + ' sales a day). Come back tomorrow')); return false; }
 const baseQuota = (n = run.period) => Math.round(dif().base * Math.pow(dif().growth, n - 1) * mods().quotaMul);
 const quota = () => baseQuota() + Math.round(run.loan || 0); // what the collector takes this period, loan included
 const itemPrice = (id) => Math.max(5, Math.round(baseQuota() * IMAP[id].price * (has('huo2') ? 0.8 : 1)));
@@ -466,7 +470,7 @@ function strike() {
 }
 function sellSword(s, where) {
   const p = priceOf(s), rack = !!where; delete run.buffs.ya;
-  run.gold += p; run.stats.sold++; run.stats.maxSale = Math.max(run.stats.maxSale, p);
+  run.gold += p; run.stats.sold++; run.soldToday = (run.soldToday || 0) + 1; run.stats.maxSale = Math.max(run.stats.maxSale, p);
   addLog(() => T('卖出' + (rack ? '剑架上的' : '') + ' +' + s.level + ' ' + N(WP[s.shape]) + '，得 ', 'Sold +' + s.level + ' ' + N(WP[s.shape]) + (rack ? ' from the rack' : '') + ' for ') + fmt(p) + T('（现价 ×', ' (price ×') + run.mk.now.toFixed(2) + T('）', ')'), 'c');
   if (s.level >= 20) { dropItem(() => T('大主顾打赏', 'A big tip')); dropItem(() => T('大主顾打赏', 'A big tip')); } else if (s.level >= 10) dropItem(() => T('主顾打赏', 'A tip'));
   fx.sold(p, s.level >= 15); sfx('coin'); vib(25);
@@ -475,6 +479,7 @@ function sellSword(s, where) {
 function sell() {
   if (!run || modalOpen()) return;
   if (run.sword.level < 1) { toast(T('至少打到 +1 才有人收', 'Nobody buys a blank. Get it to +1 first')); return; }
+  if (!canSell()) return;
   ensureAudio(); sellSword(run.sword, false); newBlank(); render(); saveRun();
 }
 function storeSword() {
@@ -500,7 +505,7 @@ function rackAction(i) {
       <button class="btn ghost" id="rBack" type="button">${T('先放着', 'Leave it')}</button>
     </div>`);
   drawIcon($('#bigSword'), s);
-  $('#rSell').onclick = () => { run.rack.splice(i, 1); sellSword(s, true); closeSheet(); render(); saveRun(); };
+  $('#rSell').onclick = () => { if (!canSell()) return; run.rack.splice(i, 1); sellSword(s, true); closeSheet(); render(); saveRun(); };
   $('#rTake').onclick = () => { if (anvil.level >= 1) run.rack[i] = anvil; else run.rack.splice(i, 1); run.sword = s; fx.born = performance.now(); run.streak = 0; addLog(() => T('把 +' + s.level + ' ' + N(wp) + ' 拿上砧子', 'Put the +' + s.level + ' ' + N(wp) + ' on the anvil')); closeSheet(); render(); saveRun(); };
   $('#rFeed').onclick = () => {
     run.rack.splice(i, 1); if (+run.buffs.rong > 0) run.buffs.rong--;
@@ -565,7 +570,7 @@ function endDay() {
   if (run.fever > 0) { run.fever = 0; addLog(() => T('睡了一觉，上头时刻没了', 'Slept it off. Fever is over')); }
   run.lastBroken = null;
   const close = run.mk.now; closeMarket();
-  run.day++; run.stam = maxStam(); run.firstOfDay = true; restock();
+  run.day++; run.stam = maxStam(); run.firstOfDay = true; run.soldToday = 0; restock();
   ensureAudio();
   if (run.day > DAYS) { settle(); return; }
   const chg = run.mk.open / close - 1;
@@ -651,15 +656,16 @@ function buyOffer(k) {
   sfx('pay'); saveRun(); render(); market();
 }
 function gameOver(lines, retired) {
-  const st = run.stats, cleared = run.period - 1;
+  const st = run.stats, cleared = run.period - 1, firstEnd = !shopOpen();
   const fame = Math.round((3 * cleared + 0.5 * cleared * cleared + 3 * Math.log10(1 + st.maxSale)) * dif().fame);
   meta.fame += fame; meta.totalFame += fame;
   const b = meta.best, rec = cleared > b.period || st.maxSale > b.sale;
   b.period = Math.max(b.period, cleared); b.level = Math.max(b.level, st.maxLevel); b.sale = Math.max(b.sale, st.maxSale);
+  meta.ends = (meta.ends || 0) + 1;
   saveMeta(); store.del('ycmm-run'); sfx('fail'); vib([100, 60, 160]);
   const L2 = [[T('撑过', 'Survived'), T(cleared + ' 期', cleared + ' periods')], [T('最高打到', 'Highest level'), '+' + st.maxLevel], [T('单件最高卖价', 'Best single sale'), fmt(st.maxSale)], [T('一共打了', 'Strikes'), T(st.strikes + ' 锤', String(st.strikes))], [T('碎掉', 'Broken'), T(st.breaks + ' 件', String(st.breaks))], [T('图鉴', 'Codex'), codexN() + '/' + WEAPONS.length]];
   run = null;
-  openSheet(`<h2>${retired ? T('收摊了', 'Shop closed') : T('铺子被钱庄收走了', 'The bank took your shop')}</h2>${linesHtml(lines)}${linesHtml(L2)}<p>${T('名望', 'Fame')} <b style="color:var(--gold)">+${fame}</b>${rec ? T(' · 新纪录', ' · New record') : ''}${T('，可以去铺子里升级。', '. Spend it on upgrades in the workshop.')}</p><div class="btns"><button class="btn" id="mAgain" type="button">${T('再开一家', 'Open a new shop')}</button><button class="btn ghost" id="mShop" type="button">${T('去铺子', 'Workshop')}</button></div>`);
+  openSheet(`<h2>${retired ? T('收摊了', 'Shop closed') : T('铺子被钱庄收走了', 'The bank took your shop')}</h2>${linesHtml(lines)}${linesHtml(L2)}<p>${T('名望', 'Fame')} <b style="color:var(--gold)">+${fame}</b>${rec ? T(' · 新纪录', ' · New record') : ''}${T('，可以去铺子里升级。', '. Spend it on upgrades in the workshop.')}${firstEnd ? `<p class="newshop">${T('铺子开张了！以后在主菜单点「铺子」，用名望买永久升级和新料子。', 'The workshop is open! From the main menu, spend fame on permanent upgrades and new materials.')}</p>` : ''}</p><div class="btns"><button class="btn" id="mAgain" type="button">${T('再开一家', 'Open a new shop')}</button><button class="btn ghost" id="mShop" type="button">${T('去铺子', 'Workshop')}</button></div>`);
   $('#mAgain').onclick = () => { closeSheet(); startRun(); };
   $('#mShop').onclick = () => { closeSheet(); showShop(); };
 }
@@ -674,7 +680,7 @@ function startRun() {
   if (tutForce) { tutForce = false; return startRun2('easy', true); }
   openSheet(`<h2>${T('这一局怎么打？', 'How hard?')}</h2><div class="cards">
     <button class="card" type="button" data-d="easy"><span class="seal" style="background:#5FD068;color:#120E0C">新</span><b>${T('新手', 'Easy')}</b><span>${T('欠款涨得慢，第一次玩选这个', 'Debt grows slowly. Pick this for your first run')}</span></button>
-    <button class="card" type="button" data-d="hard"><span class="seal">难</span><b>${T('困难', 'Hard')}</b><span>${T('欠款涨得快，东西更容易碎，借钱利息更高 · 名望 ×1.5', 'Debt grows fast, items break sooner, loans cost more · Fame ×1.5')}</span></button></div>
+    <button class="card" type="button" data-d="hard"><span class="seal">难</span><b>${T('困难', 'Hard')}</b><span>${DIFF.hard.sellCap ? T('欠款涨得快，更容易碎，每天最多卖 ' + DIFF.hard.sellCap + ' 件，借钱更贵 · 名望 ×1.5', 'Debt grows fast, breaks come sooner, max ' + DIFF.hard.sellCap + ' sales a day, loans cost more · Fame ×1.5') : T('欠款涨得快，东西更容易碎，借钱利息更高 · 名望 ×1.5', 'Debt grows fast, items break sooner, loans cost more · Fame ×1.5')}</span></button></div>
     <label class="chk"><input type="checkbox" id="dTut" ${meta.tutDone ? '' : 'checked'}> ${T('先走一遍新手教程', 'Walk me through the tutorial first')}</label>
     <div class="btns"><button class="btn ghost" id="dBack" type="button">${T('回去', 'Back')}</button></div>`);
   $('#sheet').querySelectorAll('[data-d]').forEach((b) => b.onclick = () => startRun2(b.dataset.d, $('#dTut').checked));
@@ -691,7 +697,11 @@ function startRun2(diff, tut) {
 // ---------- UI ----------
 const linesHtml = (ls) => `<div class="lines">${ls.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('')}</div>`;
 const modalOpen = () => !$('#modal').hidden || !$('#titleScreen').hidden || !$('#shopScreen').hidden || !$('#codexScreen').hidden;
-function openSheet(html) { $('#sheet').innerHTML = html; $('#modal').hidden = false; const f = $('#sheet button'); if (f) f.focus({ preventScroll: true }); }
+// free canvas memory right away (phone webviews cap total canvas memory and kill the page when it runs out)
+function freeCanvases(root) { root.querySelectorAll('canvas').forEach((c) => { c.width = 0; c.height = 0; }); }
+// only touch the DOM when the markup really changed
+function setHTML(el, html) { if (el._html === html) return false; el._html = html; freeCanvases(el); el.innerHTML = html; return true; }
+function openSheet(html) { freeCanvases($('#sheet')); $('#sheet').innerHTML = html; $('#modal').hidden = false; const f = $('#sheet button'); if (f) f.focus({ preventScroll: true }); }
 function closeSheet() { $('#modal').hidden = true; }
 function hideScreens() { $('#titleScreen').hidden = true; $('#shopScreen').hidden = true; $('#codexScreen').hidden = true; }
 let toastT = 0;
@@ -743,10 +753,11 @@ function langSheet(back) {
   openSheet(`<h2>语言 · 語言 · Language</h2><div class="btns">${LANGS.map(([k, n]) => `<button class="btn${k === LANG ? '' : ' ghost'}" type="button" data-l="${k}">${n}${k === LANG ? ' ✓' : ''}</button>`).join('')}</div>`);
   $('#sheet').querySelectorAll('[data-l]').forEach((b) => b.onclick = () => { setLang(b.dataset.l); if (back) back(); else closeSheet(); });
 }
+const shopOpen = () => !!(meta.ends || meta.totalFame > 0 || meta.best.period > 0);
 function showTitle() {
-  hideScreens(); closeSheet(); $('#titleScreen').hidden = false;
+  hideScreens(); closeSheet(); $('#titleScreen').hidden = false; $('#tShop').hidden = !shopOpen();
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.11 · 存档在这台设备的浏览器里', 'v0.11 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.12 · 存档在这台设备的浏览器里', 'v0.12 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -766,7 +777,7 @@ $('#shopScreen').addEventListener('click', (e) => {
   saveMeta(); showShop();
 });
 function showCodex() {
-  hideScreens(); $('#codexScreen').hidden = false;
+  hideScreens(); $('#codexScreen').hidden = false; freeCanvases($('#codexScreen'));
   const n = codexN(), gd = gradesDone(), w = rarityWeights(), tw = w.reduce((x, y) => x + y, 0);
   $('#cCount').textContent = n + '/' + WEAPONS.length;
   $('#codexScreen h2').textContent = T('兵器图鉴', 'Weapon Codex');
@@ -1001,6 +1012,7 @@ addEventListener('keydown', (e) => {
 });
 
 let lastLevel = null;
+let rackDrawn = false;
 function render() {
   if (!run) return;
   const s = run.sword, t = tierOf(s.level), q = quota(), wp = WP[s.shape], mk = run.mk;
@@ -1035,7 +1047,7 @@ function render() {
   else fe.innerHTML = `<b>${T('火候', 'Fire')}</b><span class="segs">${Array.from({ length: FIRE_MAX }, (_, i) => `<i class="${i < fr ? 'on' : ''}"></i>`).join('')}</span><span>${fr}/${FIRE_MAX} · ${T('满了进入上头时刻', 'full = Fever')}</span>`;
   fe.classList.toggle('hot', run.fever > 1); fe.classList.toggle('last', run.fever === 1); $('#app').classList.toggle('fever', run.fever > 0); $('#app').classList.toggle('lastfever', run.fever === 1);
   $('#btnSell').disabled = s.level < 1;
-  $('#sellPrice').textContent = s.level < 1 ? T('+1 起收', 'from +1') : fmt(priceOf(s));
+  $('#sellPrice').textContent = (s.level < 1 ? T('+1 起收', 'from +1') : fmt(priceOf(s))) + (sellCap() ? T(' · 今天还能卖 ', ' · left today ') + salesLeft() : '');
   $('#btnStore').disabled = s.level < 1 || run.rack.length >= rackCap();
   $('#rackCount').textContent = T('剑架 ', 'Rack ') + run.rack.length + '/' + rackCap();
   const rb = $('#btnRest');
@@ -1050,15 +1062,17 @@ function render() {
   $('#mTip').textContent = has('xin') ? T(`内幕消息：明天${mk.gap >= 1 ? '高开' : '低开'}，大约 ${mk.gap >= 1 ? '+' : '-'}${pct(Math.abs(mk.gap - 1))}${mk.li ? '（黄历保底 ×1.40）' : ''}`, `Insider: tomorrow opens ${mk.gap >= 1 ? 'up' : 'down'} about ${pct(Math.abs(mk.gap - 1))}${mk.li ? ' (Almanac floor ×1.40)' : ''}`) : mk.li ? T('黄历：明天开盘至少 ×1.40', 'Almanac: tomorrow opens at ×1.40 or higher') : (has('ke') && mk.now < 1 ? T('熟客按 ×1.00 收。', 'Regulars still pay ×1.00.') : T('每打一锤剑价跳一下；睡觉收盘，明天跳空开盘。', 'The price moves every strike; sleeping closes the day.'));
   if (tab === 'market') drawMarket();
   const cap = rackCap();
-  $('#rack').innerHTML = Array.from({ length: cap }, (_, i) => { const r = run.rack[i];
-    return r ? `<button class="slot" type="button" data-i="${i}" style="border-color:${RARITY[WP[r.shape].rar].color}66"><canvas></canvas><b style="color:${tierOf(r.level).color}">+${r.level}</b><span style="color:${RARITY[WP[r.shape].rar].color}">${N(WP[r.shape])}</span><span>${fmt(priceOf(r, false))}</span></button>` : `<div class="slot empty">${T('空位', 'Empty')}</div>`; }).join('');
-  if (tab === 'rack') $('#rack').querySelectorAll('.slot[data-i]').forEach((el) => drawIcon(el.querySelector('canvas'), run.rack[+el.dataset.i]));
+  const rackNew = setHTML($('#rack'), Array.from({ length: cap }, (_, i) => { const r = run.rack[i];
+    return r ? `<button class="slot" type="button" data-i="${i}" style="border-color:${RARITY[WP[r.shape].rar].color}66"><canvas></canvas><b style="color:${tierOf(r.level).color}">+${r.level}</b><span style="color:${RARITY[WP[r.shape].rar].color}">${N(WP[r.shape])}</span><span class="rp"></span></button>` : `<div class="slot empty">${T('空位', 'Empty')}</div>`; }).join(''));
+  if (rackNew) rackDrawn = false;
+  $('#rack').querySelectorAll('.slot[data-i]').forEach((el) => { el.querySelector('.rp').textContent = fmt(priceOf(run.rack[+el.dataset.i], false)); }); // prices move every strike; the pictures don't
+  if (tab === 'rack' && !rackDrawn) { rackDrawn = true; $('#rack').querySelectorAll('.slot[data-i]').forEach((el) => drawIcon(el.querySelector('canvas'), run.rack[+el.dataset.i])); }
   const ids = Object.keys(run.bag);
-  $('#bag').innerHTML = ids.map((id) => `<button class="chip" type="button" data-id="${id}"><i>${IMAP[id].ch}</i>${N(IMAP[id])} ×${run.bag[id]}</button>`).join('') + `<button class="chip shopbtn" type="button" data-shop="1"><i>铺</i>${T('逛杂货铺', 'General store')}</button>`;
+  setHTML($('#bag'), ids.map((id) => `<button class="chip" type="button" data-id="${id}"><i>${IMAP[id].ch}</i>${N(IMAP[id])} ×${run.bag[id]}</button>`).join('') + `<button class="chip shopbtn" type="button" data-shop="1"><i>铺</i>${T('逛杂货铺', 'General store')}</button>`);
   const cnt = ids.reduce((a, k) => a + run.bag[k], 0);
   document.querySelector('[data-tab="bag"]').innerHTML = T('背包', 'Bag') + (cnt ? `<span class="n">${cnt}</span>` : '');
   document.querySelector('[data-tab="rack"]').innerHTML = T('剑架', 'Rack') + (run.rack.length ? `<span class="n">${run.rack.length}</span>` : '');
-  $('#seals').innerHTML = run.relics.length ? run.relics.map((id) => `<button class="seal" type="button" data-id="${id}" title="${N(RMAP[id])}: ${D(RMAP[id])}" aria-label="${N(RMAP[id])}">${RMAP[id].ch}</button>`).join('') : `<span class="empty">${T('还没有秘籍。每还清一期能挑一本。', 'No seals yet. You get one after each payment.')}</span>`;
+  setHTML($('#seals'), run.relics.length ? run.relics.map((id) => `<button class="seal" type="button" data-id="${id}" title="${N(RMAP[id])}: ${D(RMAP[id])}" aria-label="${N(RMAP[id])}">${RMAP[id].ch}</button>`).join('') : `<span class="empty">${T('还没有秘籍。每还清一期能挑一本。', 'No seals yet. You get one after each payment.')}</span>`);
   $('#log').innerHTML = run.log.map((e) => `<div class="${e.length >= 3 ? e[2] : e[1]}">${logText(e)}</div>`).join('');
   const rg = $('#regretBtn'), canUndo = !!(run.lastBroken && run.bag.hui);
   rg.hidden = !canUndo; if (canUndo) rg.textContent = T('吃后悔药 ×' + run.bag.hui + '：找回 +' + run.lastBroken.level + ' ' + formName(run.lastBroken.shape, run.lastBroken.level), 'Regret Pill ×' + run.bag.hui + ': undo +' + run.lastBroken.level + ' ' + formName(run.lastBroken.shape, run.lastBroken.level));
@@ -1573,7 +1587,8 @@ function demoTick() {
   const p = priceOf(s), enough = p >= need * 1.05 && need > 0;
   if (s.level >= 1 && !(run.fever > 1) && (o.brk > DEMO_RISK || (enough && o.brk > 0.04))) {
     if (s.level >= 8 && run.rack.length < rackCap() && !enough) { storeSword(); return; }
-    sell(); return;
+    if (salesLeft() > 0) { sell(); return; }
+    if (run.rack.length < rackCap()) { storeSword(); return; }
   }
   strike();
 }
@@ -1581,7 +1596,7 @@ applyStatic();
 if (DEMO) {
   meta.seenHelp = true; meta.muted = true;
   const qp = new URLSearchParams(location.search);
-  if (qp.get('hb')) DIFF.hard.base = +qp.get('hb'); if (qp.get('hg')) DIFF.hard.growth = +qp.get('hg'); if (qp.get('hk')) DIFF.hard.brk = +qp.get('hk'); // balance sweeps
+  if (qp.get('hb')) DIFF.hard.base = +qp.get('hb'); if (qp.get('hg')) DIFF.hard.growth = +qp.get('hg'); if (qp.get('hk')) DIFF.hard.brk = +qp.get('hk'); if (qp.get('hc') != null) DIFF.hard.sellCap = +qp.get('hc'); // balance sweeps
   hideScreens(); newRun('iron', qp.get('diff') === 'hard' ? 'hard' : 'easy'); if (!qp.get('plain')) run.relics.push('lian', 'yan');
   const w = new URLSearchParams(location.search).get('w'); run.sword = makeSword(WP[w] ? w : 'yu'); setTab('market');
   setInterval(demoTick, 380);
