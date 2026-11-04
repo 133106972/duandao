@@ -246,7 +246,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } },
 };
 const META_DEFAULT = { fame: 0, totalFame: 0, upg: {}, mats: ['iron'], mat: 'iron', runs: 0, best: { period: 0, level: 0, sale: 0 }, codex: {}, forged: {}, seenHelp: false, tutDone: false, asked: false, diff: 'easy', muted: false, vibe: true, lang: null };
-let meta = Object.assign({}, META_DEFAULT, DEMO ? {} : store.get('ycmm-meta', {}));
+let meta = Object.assign({}, META_DEFAULT, DEMO ? {} : store.get('ycmm-v0.13-meta', {}));
 if (!meta.codex) meta.codex = {};
 if (!meta.forged) meta.forged = {};
 for (const k of Object.keys(meta.codex)) if (!WP[k]) delete meta.codex[k];
@@ -254,11 +254,11 @@ if (meta.vibe === undefined) meta.vibe = true;
 { const nl = (navigator.language || 'zh').toLowerCase(); const two = nl.slice(0, 2); LANG = meta.lang || (/^zh-(tw|hk|mo|hant)/.test(nl) ? 'zht' : two === 'zh' ? 'zh' : I18N[two] ? two : 'en'); }
 { const q = new URLSearchParams(location.search).get('lang'); if (LANGS.some(([k]) => k === q)) LANG = q; }
 if (!['zh', 'zht', 'en'].includes(LANG) && !(I18N[LANG] && I18N[LANG].t)) LANG = 'en';
-let run = DEMO ? null : store.get('ycmm-run', null);
+let run = DEMO ? null : store.get('ycmm-v0.13-run', null);
 if (run && run.v !== SAVE_V) run = null;
 if (run) { run.boost = run.boost || { stam: 0, succ: 0, luck: 0 }; run.loan = run.loan || 0; run.fire = run.fire || 0; run.fever = run.fever || 0; }
-const saveMeta = () => { if (!DEMO) store.set('ycmm-meta', meta); };
-const saveRun = () => { if (!DEMO && run) store.set('ycmm-run', run); };
+const saveMeta = () => { if (!DEMO) store.set('ycmm-v0.13-meta', meta); };
+const saveRun = () => { if (!DEMO && run) store.set('ycmm-v0.13-run', run); };
 
 // ---------- rules ----------
 const has = (id) => !!run && run.relics.includes(id);
@@ -662,7 +662,7 @@ function gameOver(lines, retired) {
   const b = meta.best, rec = cleared > b.period || st.maxSale > b.sale;
   b.period = Math.max(b.period, cleared); b.level = Math.max(b.level, st.maxLevel); b.sale = Math.max(b.sale, st.maxSale);
   meta.ends = (meta.ends || 0) + 1;
-  saveMeta(); store.del('ycmm-run'); sfx('fail'); vib([100, 60, 160]);
+  saveMeta(); store.del('ycmm-v0.13-run'); sfx('fail'); vib([100, 60, 160]);
   const L2 = [[T('撑过', 'Survived'), T(cleared + ' 期', cleared + ' periods')], [T('最高打到', 'Highest level'), '+' + st.maxLevel], [T('单件最高卖价', 'Best single sale'), fmt(st.maxSale)], [T('一共打了', 'Strikes'), T(st.strikes + ' 锤', String(st.strikes))], [T('碎掉', 'Broken'), T(st.breaks + ' 件', String(st.breaks))], [T('图鉴', 'Codex'), codexN() + '/' + WEAPONS.length]];
   run = null;
   openSheet(`<h2>${retired ? T('收摊了', 'Shop closed') : T('铺子被钱庄收走了', 'The bank took your shop')}</h2>${linesHtml(lines)}${linesHtml(L2)}<p>${T('名望', 'Fame')} <b style="color:var(--gold)">+${fame}</b>${rec ? T(' · 新纪录', ' · New record') : ''}${T('，可以去铺子里升级。', '. Spend it on upgrades in the workshop.')}${firstEnd ? `<p class="newshop">${T('铺子开张了！以后在主菜单点「铺子」，用名望买永久升级和新料子。', 'The workshop is open! From the main menu, spend fame on permanent upgrades and new materials.')}</p>` : ''}</p><div class="btns"><button class="btn" id="mAgain" type="button">${T('再开一家', 'Open a new shop')}</button><button class="btn ghost" id="mShop" type="button">${T('去铺子', 'Workshop')}</button></div>`);
