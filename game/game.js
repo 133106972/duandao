@@ -1329,7 +1329,7 @@ function renderWeapon(c, s, X, Y, L, u, o = {}) {
     c.save(); c.globalAlpha = (o.alpha ?? 1) * (0.7 + 0.3 * Math.sin(t0 / 300)); c.strokeStyle = '#FFE9A8'; c.lineWidth = Math.max(2, u * 0.18); c.shadowColor = '#FFD27A'; c.shadowBlur = 18;
     c.beginPath(); c.ellipse(X + L * 0.42, Y - u * 3.2, L * 0.16, u * 0.7, 0, 0, 7); c.stroke(); c.restore();
     c.save(); c.font = `400 ${Math.max(10, u * 1.1)}px "Ma Shan Zheng", serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
-    RUNES.forEach((ch, i) => { const a = -t0 / 1400 + i * 6.283 / RUNES.length; c.fillStyle = '#FFE9A8'; c.globalAlpha = (o.alpha ?? 1) * (0.55 + 0.45 * Math.sin(t0 / 250 + i)); c.fillText(ch, X + L * 0.42 + Math.cos(a) * L * 0.6, Y + Math.sin(a) * u * 3.4); });
+    if (!window.__noRunes) RUNES.forEach((ch, i) => { /* store art with no text sets window.__noRunes */ const a = -t0 / 1400 + i * 6.283 / RUNES.length; c.fillStyle = '#FFE9A8'; c.globalAlpha = (o.alpha ?? 1) * (0.55 + 0.45 * Math.sin(t0 / 250 + i)); c.fillText(ch, X + L * 0.42 + Math.cos(a) * L * 0.6, Y + Math.sin(a) * u * 3.4); });
     c.restore();
   }
   if (!o.sil && s.level >= 30 && o.motes !== false) {

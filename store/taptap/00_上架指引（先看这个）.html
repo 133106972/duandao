@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一锤子买卖 · TapTap 上架指引</title>
+<style>
+:root{--bg:#F7F5F2;--card:#FFFFFF;--line:#E4DED6;--text:#1F1A17;--dim:#6E645C;--accent:#E2560F;--ok:#1E8E5A;--warn:#B54708;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+main{max-width:860px;margin:0 auto;padding:32px 16px 64px;display:grid;gap:18px}
+h1{margin:0;font-size:26px}
+.sub{margin:0;color:var(--dim)}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+h2{margin:0 0 10px;font-size:18px;display:flex;gap:10px;align-items:baseline}
+h2 .n{background:var(--accent);color:#fff;border-radius:8px;padding:0 9px;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{border-top:1px solid var(--line);padding:9px 6px;vertical-align:top}
+td:first-child{width:150px;font-weight:700}
+code{background:#F1ECE6;border-radius:6px;padding:1px 6px;font-size:13px;word-break:break-all}
+.copy{display:block;white-space:pre-wrap;background:#FBF8F4;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0 4px;font-size:14px}
+button{font:inherit;font-size:13px;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:8px;padding:3px 12px;cursor:pointer}
+button.done{border-color:var(--ok);color:var(--ok)}
+.note{color:var(--warn);font-size:14px}
+.tip{color:var(--dim);font-size:13px}
+ul{margin:6px 0;padding-left:1.3em}
+</style>
+</head>
+<body>
+<main>
+  <h1>一锤子买卖 · TapTap 上架指引</h1>
+  <p class="sub">按顺序一步一步来。每一步要用的文件都在这个文件夹里，文件夹前面的数字就是步骤号。要填的文字点「复制」再粘贴。</p>
+
+  <section>
+    <h2><span class="n">1</span>上传 H5 包体</h2>
+    <table>
+      <tr><td>上传文件</td><td><code>01_H5包体/一锤子买卖-h5.zip</code>（不要解压，直接传这个 zip）</td></tr>
+      <tr><td>屏幕适配方式</td><td>竖屏</td></tr>
+      <tr><td>传完以后</td><td>点右侧「自测」，用手机上<b>最新版 TapTap App</b> 扫码试玩：能打开、能锤、退出再进存档还在，就没问题。</td></tr>
+    </table>
+    <p class="tip">上次报错「解压后仅有一个文件夹」，是因为旧包里直接放的是 index.html。新包里是一个文件夹 yichuizimaimai，index.html 在文件夹里面，符合要求。包只有不到 1MB，大小没问题。</p>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>游戏发布状态</h2>
+    <p>Android、iOS、Windows 三个都选「<b>提供游玩</b>」。H5 游戏在手机和电脑上都能玩。</p>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>商店资料：文字</h2>
+    <p class="tip">「Android/电脑主机端」和「iOS」两个标签页都要填，内容一样。</p>
+    <table>
+      <tr><td>游戏名</td><td><div class="copy" id="c-name">一锤子买卖</div><button data-c="c-name">复制</button></td></tr>
+      <tr><td>简介</td><td><div class="copy" id="c-intro">你开了间铁匠铺，什么都能打：剑、菜刀、咸鱼、电钻、马桶搋子……
+每一锤都可能升级，也可能碎。等级越高越值钱，也越容易碎。敢不敢再锤一下？
+
+● 剑价像股票：每锤都在跳，有日 K、有利好利空，看准了再卖
+● 高利贷：每 3 天还一期，一期比一期多，还不上铺子就倒
+● 上头时刻：火候满 10 格，8 锤免费，最后一锤可能碎
+● 进化：每件兵器 +25、+50、+75 进化一次，咸鱼最后能变成北冥之鲲
+● 20 种奇葩兵器、5 档稀有度、26 本秘籍、13 种道具，还有后悔药
+● 两档难度：新手放松玩，困难欠款每期翻五倍
+● 数字没有上限：万、亿、兆……一直到无量大数
+● 10 种语言，手机、电脑都能玩，单机，没有内购</div><button data-c="c-intro">复制</button></td></tr>
+      <tr><td>开发者的话</td><td><div class="copy" id="c-dev">大家好，这是我第一次上架自己做的小游戏。
+灵感来自铁匠铺打铁：每一锤都可能更好，也可能全毁了。我想把这种「再来一锤」的心跳感，和炒股、还债揉在一起。
+游戏不用联网，存档就在你自己的设备里。新手模式可以随便玩；困难模式欠款涨得飞快，适合想挑战的朋友。
+现在是第一版，数值和内容还会继续调。玩得开心，或者哪里不顺手，都欢迎在评论区告诉我。</div><button data-c="c-dev">复制</button></td></tr>
+      <tr><td>首页推荐语</td><td><div class="copy" id="c-rec">一锤升级一锤碎，敢不敢再锤一下？</div><button data-c="c-rec">复制</button> <span class="tip">16 个字，不超过 25 字，没有「最」「第一」这类词</span></td></tr>
+      <tr><td>游戏类型 / 标签</td><td>类型选「休闲」。标签可选：放置、模拟经营、单机、搞笑</td></tr>
+      <tr><td>适龄</td><td>8+（你已经选好了）</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="n">4</span>商店资料：图片和视频</h2>
+    <table>
+      <tr><td>游戏图标</td><td><code>02_游戏图标/游戏图标-512x512.png</code></td></tr>
+      <tr><td>游戏截图</td><td><code>03_游戏截图/截图1.png</code> 到 <code>截图6.png</code>，按 1→6 的顺序传。全是实机画面，竖版 1080×1920，每张不到 1MB。
+        <br><span class="tip">「备用-带卖点文字」里是同样 6 张加了一句卖点的版本，审核要是嫌纯截图不好看可以换，但规则写了宣传类图片最多 2 张，所以默认用纯截图。</span></td></tr>
+      <tr><td>游戏实机录屏</td><td><code>04_游戏实机录屏/实机录屏-竖版.mp4</code>（26 秒，1080×1920，H.264，带游戏音效）。开头第一秒就是打铁，符合「前 5 秒展示核心玩法」；没有字幕、没有配音、没有手机外框。</td></tr>
+      <tr><td>宣传片（可选）</td><td><code>05_宣传片/宣传片-横版.mp4</code>（24 秒，1920×1080，带游戏音效）。用的是另一段画面（金箍棒、马桶搋子、电钻进化），不和实机录屏重复。</td></tr>
+      <tr><td>宣传图（16:9）</td><td><code>06_宣传图16比9/宣传图-1920x1080.png</code>。只有游戏标题，没有图标、没有其他宣传字，画面是游戏自己画出来的场景，不是截图拼贴。</td></tr>
+      <tr><td>首页推荐素材</td><td>传了宣传片就选「使用宣传片」（首页会自动播放）；没传就选「使用宣传图」。</td></tr>
+      <tr><td>游戏 LOGO</td><td><code>07_游戏LOGO/游戏LOGO.png</code>（透明底，宽 1710）</td></tr>
+      <tr><td>横版、竖版封面</td><td>横版：<code>08_横版竖版封面/横版封面-1380x645.png</code><br>竖版：<code>08_横版竖版封面/竖版封面-1000x1500.png</code></td></tr>
+      <tr><td>游戏库背景壁纸</td><td><code>09_游戏库背景壁纸/游戏库背景壁纸-3840x1240.png</code>（没有任何文字）</td></tr>
+      <tr><td>无 LOGO 宣传图</td><td>横版：<code>10_无LOGO宣传图/无LOGO宣传图-横版-1920x1080.png</code><br>竖版：<code>10_无LOGO宣传图/无LOGO宣传图-竖版-1080x1440.png</code>（两张内容一样，都没有文字）</td></tr>
+    </table>
+    <p class="tip">竖版封面和无 LOGO 竖版宣传图的最低尺寸在录屏里被截断了，我按常见比例做的。如果后台提示尺寸不对，把提示截图发我，我马上重做。</p>
+  </section>
+
+  <section>
+    <h2><span class="n">5</span>其他选项</h2>
+    <table>
+      <tr><td>兼容性</td><td>无系统要求</td></tr>
+      <tr><td>游戏官网链接</td><td>留空</td></tr>
+      <tr><td>玩家交流群</td><td>留空（以后建了群再填）</td></tr>
+      <tr><td>游戏内是否提供 AI 合成服务</td><td>不提供（游戏里没有给玩家用的 AI 生成功能）</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="n">6</span>提交审核</h2>
+    <p>全部填完点提交，等审核。被打回来的话，把审核意见截图发给我，我来改游戏或者素材。</p>
+  </section>
+
+  <section>
+    <h2><span class="n">!</span>配音乐之前看一眼</h2>
+    <ul>
+      <li>两个视频都只带<b>游戏里的音效</b>，没有音乐，你可以自己配。</li>
+      <li><b>发抖音</b>：在抖音 App 里用它自带的音乐库配，平台有授权，最安全。</li>
+      <li><b>传 TapTap</b>：热门歌一般有版权，直接压进视频传到别的平台有被下架的风险。实机录屏建议就用现在带音效的版本；宣传片如果要配乐，用免版权音乐。</li>
+    </ul>
+    <p class="note">账号和密码不要发给任何人（包括我），登录和提交都你自己点。</p>
+  </section>
+</main>
+<script>
+document.querySelectorAll('button[data-c]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = document.getElementById(b.dataset.c).innerText;
+    var done = function () { b.textContent = '已复制'; b.classList.add('done'); setTimeout(function () { b.textContent = '复制'; b.classList.remove('done'); }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+    function fallback() { var r = document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.c)); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand('copy'); done(); } catch (e) {} }
+  });
+});
+</script>
+</body>
+</html>
