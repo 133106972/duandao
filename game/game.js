@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.6 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 一锤子买卖 / One Hammer Deal v0.7 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -14,10 +14,17 @@ const FIRE_MAX = 10, FEVER_LEN = 8, FEVER_GREAT = 0.15; // full fire (10) starts
 
 // ---------- language ----------
 // every visible string goes through T(zh, en); data tables carry `en` / `descEn` fields
+// 繁體 is generated from the Simplified text with this character table (built with OpenCC s2twp, see DESIGN.md)
 let LANG = 'zh';
-const T = (zh, en) => (LANG === 'en' ? en : zh);
-const N = (o) => (LANG === 'en' && o.en ? o.en : o.name);
-const D = (o) => (LANG === 'en' && o.descEn ? o.descEn : o.desc);
+const TRAD = {"万":"萬","东":"東","两":"兩","个":"個","么":"麼","买":"買","于":"於","云":"雲","亿":"億","从":"從","价":"價","优":"優","会":"會","伞":"傘","传":"傳","体":"體","侠":"俠","债":"債","儿":"兒","关":"關","内":"內","军":"軍","准":"準","减":"減","几":"機","击":"擊","剑":"劍","动":"動","励":"勵","匀":"勻","单":"單","卖":"賣","历":"曆","厨":"廚","参":"參","变":"變","叠":"疊","号":"號","后":"後","听":"聽","咸":"鹹","图":"圖","声":"聲","备":"備","够":"夠","头":"頭","奖":"獎","学":"學","宝":"寶","实":"實","对":"對","岳":"嶽","师":"師","带":"帶","干":"幹","庄":"莊","库":"庫","开":"開","弃":"棄","张":"張","归":"歸","录":"錄","恒":"恆","惊":"驚","扩":"擴","抢":"搶","护":"護","挂":"掛","挡":"擋","损":"損","捡":"撿","换":"換","撑":"撐","数":"數","断":"斷","无":"無","时":"時","机":"機","杂":"雜","条":"條","来":"來","极":"極","样":"樣","档":"檔","气":"氣","沟":"溝","没":"沒","沧":"滄","浏":"瀏","涧":"澗","涨":"漲","满":"滿","炉":"爐","点":"點","炼":"煉","现":"現","电":"電","盘":"盤","着":"著","确":"確","礼":"禮","离":"離","种":"種","税":"稅","稳":"穩","签":"籤","系":"係","红":"紅","约":"約","级":"級","纪":"紀","纯":"純","练":"練","细":"細","经":"經","结":"結","给":"給","绩":"績","续":"續","绿":"綠","胆":"膽","脑":"腦","艺":"藝","芦":"蘆","葱":"蔥","蓝":"藍","补":"補","见":"見","规":"規","览":"覽","觉":"覺","议":"議","记":"記","设":"設","识":"識","话":"話","语":"語","说":"說","谱":"譜","财":"財","账":"賬","货":"貨","贪":"貪","购":"購","贷":"貸","赌":"賭","赏":"賞","载":"載","边":"邊","过":"過","运":"運","还":"還","这":"這","进":"進","连":"連","选":"選","采":"採","里":"裡","鉴":"鑑","针":"針","钢":"鋼","钱":"錢","钻":"鑽","铁":"鐵","铜":"銅","铸":"鑄","铺":"鋪","锅":"鍋","锋":"鋒","锤":"錘","键":"鍵","镇":"鎮","镖":"鏢","长":"長","门":"門","间":"間","陨":"隕","险":"險","随":"隨","静":"靜","韧":"韌","项":"項","顾":"顧","风":"風","飞":"飛","马":"馬","鱼":"魚","鳞":"鱗","鸡":"雞","鸿":"鴻","黄":"黃","齐":"齊","龙":"龍"};
+const TRAD_PHRASES = [['擀面杖', '擀麵杖'], ['激光', '雷射']]; // Taiwan wording that a per-character table can't express
+function toTrad(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; for (const [a, b] of TRAD_PHRASES) o = o.split(toTradRaw(a)).join(b); return o; }
+function toTradRaw(str) { let o = ''; for (const ch of String(str)) o += TRAD[ch] || ch; return o; }
+const LANGS = [['zh', '简体中文'], ['zht', '繁體中文'], ['en', 'English']];
+const T = (zh, en) => (LANG === 'en' ? en : LANG === 'zht' ? toTrad(zh) : zh);
+const N = (o) => (LANG === 'en' && o.en ? o.en : LANG === 'zht' ? toTrad(o.name) : o.name);
+const D = (o) => (LANG === 'en' && o.descEn ? o.descEn : LANG === 'zht' ? toTrad(o.desc) : o.desc);
+function inLang(l, fn) { const cur = LANG; LANG = l; try { return fn(); } finally { LANG = cur; } }
 
 // ---------- numbers ----------
 // 中文：万进单位用到无量大数，再往上叠「无量大数」；English: K M B T … then aa, ab, ac … like most incrementals
@@ -38,7 +45,7 @@ function fmtEn(n) {
 function fmt(n) {
   if (!isFinite(n)) return n < 0 ? T('-不可说', '-∞') : T('不可说不可说', 'Beyond Words');
   if (n < 0) return '-' + fmt(-n);
-  return LANG === 'en' ? fmtEn(n) : fmtZh(n);
+  return LANG === 'en' ? fmtEn(n) : LANG === 'zht' ? toTrad(fmtZh(n)) : fmtZh(n);
 }
 const pct = (x) => (x * 100 >= 10 || x === 0 ? (x * 100).toFixed(0) : (x * 100).toFixed(1)) + '%';
 
@@ -177,8 +184,8 @@ if (!meta.codex) meta.codex = {};
 if (!meta.forged) meta.forged = {};
 for (const k of Object.keys(meta.codex)) if (!WP[k]) delete meta.codex[k];
 if (meta.vibe === undefined) meta.vibe = true;
-LANG = meta.lang || ((navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en');
-if (/[?&]lang=en/.test(location.search)) LANG = 'en';
+{ const nl = (navigator.language || 'zh').toLowerCase(); LANG = meta.lang || (/^zh-(tw|hk|mo|hant)/.test(nl) ? 'zht' : nl.startsWith('zh') ? 'zh' : 'en'); }
+{ const q = new URLSearchParams(location.search).get('lang'); if (LANGS.some(([k]) => k === q)) LANG = q; }
 let run = DEMO ? null : store.get('ycmm-run', null);
 if (run && run.v !== SAVE_V) run = null;
 if (run) { run.boost = run.boost || { stam: 0, succ: 0, luck: 0 }; run.loan = run.loan || 0; run.fire = run.fire || 0; run.fever = run.fever || 0; }
@@ -215,7 +222,7 @@ function odds(s, withBuffs = true) {
   if (b.cui > 0) { keep += brk / 2; brk /= 2; }
   if (b.zhu) { let need = 0.25; const t1 = Math.min(brk, need); brk -= t1; need -= t1; const t2 = Math.min(dmg, need); dmg -= t2; need -= t2; keep -= Math.min(keep, need); }
   if (b.hu) { dmg += brk; brk = 0; }
-  if (run && run.fever > 0) { keep += brk + dmg; brk = dmg = 0; const add = Math.min(FEVER_GREAT, keep); keep -= add; great += add; }
+  if (run && run.fever > 0) { if (run.fever > 1) { keep += brk + dmg; brk = dmg = 0; } const add = Math.min(FEVER_GREAT, keep); keep -= add; great += add; }
   let succ = 1 - brk - dmg - keep - great;
   if (succ < 0.03) { const tot = brk + dmg + keep + great, k = 0.97 / tot; brk *= k; dmg *= k; keep *= k; great *= k; succ = 0.03; }
   if (run && run.forceGreat) return { brk: 0, dmg: 0, keep: 0, succ: 0, great: 1 };
@@ -242,7 +249,7 @@ function priceOf(s, withTicket = true) {
 }
 const maxStam = () => 18 + mods().stamAdd;
 const rackCap = () => 3 + ulv('rack') + (run ? run.extraSlots : 0);
-const baseQuota = (n = run.period) => Math.round(50 * Math.pow(2.25, n - 1) * mods().quotaMul);
+const baseQuota = (n = run.period) => Math.round(50 * Math.pow(2.5, n - 1) * mods().quotaMul);
 const quota = () => baseQuota() + Math.round(run.loan || 0); // what the collector takes this period, loan included
 const itemPrice = (id) => Math.max(5, Math.round(baseQuota() * IMAP[id].price * (has('huo2') ? 0.8 : 1)));
 
@@ -255,15 +262,16 @@ function newMarket() {
   return mk;
 }
 const nextGap = () => Math.exp(gauss() * 0.13 * (has('zhuang') ? 2 : 1) + (R() < 0.07 ? 0.4 : 0));
+const newsText = (n) => (!n ? '' : typeof n === 'string' ? n : (n.up ? T('利好：', 'Good news: ') : T('利空：', 'Bad news: ')) + T(...(n.up ? NEWS_UP : NEWS_DOWN)[n.i]));
 function tickMarket() {
   const mk = run.mk, vol = 0.035 * (has('zhuang') ? 2 : 1);
   let x = Math.log(mk.now);
   x += gauss() * vol - x * 0.015 - (x - Math.log(mk.open)) * 0.04;
   if (R() < (has('zhuang') ? 0.05 : 0.025)) {
-    const up = R() < 0.5, j = 0.12 + R() * 0.13, nw = pick(up ? NEWS_UP : NEWS_DOWN); x += up ? j : -j;
-    mk.news = (up ? T('利好：', 'Good news: ') : T('利空：', 'Bad news: ')) + T(nw[0], nw[1]);
-    addLog(mk.news + (up ? T('，剑价拉升 ', ', prices jump ') : T('，剑价下挫 ', ', prices drop ')) + pct(Math.exp(j) - 1), up ? 'b' : 's');
-    toast(mk.news);
+    const up = R() < 0.5, j = 0.12 + R() * 0.13; x += up ? j : -j;
+    mk.news = { up, i: Math.floor(R() * (up ? NEWS_UP : NEWS_DOWN).length) }; const nw = mk.news;
+    addLog(() => newsText(nw) + (up ? T('，剑价拉升 ', ', prices jump ') : T('，剑价下挫 ', ', prices drop ')) + pct(Math.exp(j) - 1), up ? 'b' : 's');
+    toast(newsText(nw));
   }
   mk.now = clamp(Math.exp(x), 0.35, 4); mk.hi = Math.max(mk.hi, mk.now); mk.lo = Math.min(mk.lo, mk.now);
   mk.ticks.push(mk.now); if (mk.ticks.length > 60) mk.ticks.shift();
@@ -289,7 +297,7 @@ function makeSword(shape) {
 }
 function noteCodex(s) {
   const was = meta.codex[s.shape];
-  if (was === undefined) { meta.codex[s.shape] = s.level; saveMeta(); if (run) { addLog(T('图鉴新收录：', 'New in the codex: ') + N(WP[s.shape]) + ' (' + N(RARITY[WP[s.shape].rar]) + ')', 'g'); checkMiles(); } }
+  if (was === undefined) { meta.codex[s.shape] = s.level; saveMeta(); if (run) { addLog(() => T('图鉴新收录：', 'New in the codex: ') + N(WP[s.shape]) + ' (' + N(RARITY[WP[s.shape].rar]) + ')', 'g'); checkMiles(); } }
   else if (s.level > was) { meta.codex[s.shape] = s.level; saveMeta(); }
 }
 let milesSeen = null, gradesSeen = null;
@@ -310,11 +318,11 @@ function newRun(mat) {
   run.mk = newMarket(); run.mk.gap = nextGap();
   newBlank(); run.stam = maxStam(); restock();
   meta.runs++; saveMeta();
-  addLog(T('开张了。钱庄说：三天后来收 ', 'Open for business. The bank will collect ') + fmt(quota()) + T('。', ' in three days.'));
+  addLog(() => T('开张了。钱庄说：三天后来收 ', 'Open for business. The bank will collect ') + fmt(quota()) + T('。', ' in three days.'));
   saveRun();
 }
 const addItem = (id, n = 1) => { run.bag[id] = (run.bag[id] || 0) + n; };
-function dropItem(why) { const id = pick(ITEMS.filter((i) => i.id !== 'xia').map((i) => i.id)); addItem(id); addLog(why + T('，捡到「', ': found ') + N(IMAP[id]) + T('」', ''), 'c'); fx.pop2(T('捡到「' + N(IMAP[id]) + '」', 'Found: ' + N(IMAP[id])), '#F2C14E'); }
+function dropItem(why) { const w = typeof why === 'function' ? why : () => why, id = pick(ITEMS.filter((i) => i.id !== 'xia').map((i) => i.id)); addItem(id); addLog(() => w() + T('，捡到「', ': found ') + N(IMAP[id]) + T('」', ''), 'c'); fx.pop2(T('捡到「' + N(IMAP[id]) + '」', 'Found: ' + N(IMAP[id])), '#F2C14E'); }
 const wname = (s) => N(WP[s.shape]) + T('「' + sname(s) + '」', ' "' + sname(s) + '"');
 
 // ---------- actions ----------
@@ -324,10 +332,10 @@ function strike() {
   if (run.stam <= 0 && !(run.fever > 0)) { toast(run.bag.bao || run.bag.shen ? T('没力气了。背包里有吃的，或者睡一觉', 'Out of stamina. Eat something from the bag, or sleep') : T('没力气了，睡一觉明天再打', 'Out of stamina. Sleep and try tomorrow')); return; }
   const now = performance.now(); if (now - lastStrike < 140) return; lastStrike = now;
   ensureAudio();
-  const feverStrike = run.fever > 0;
+  const feverStrike = run.fever > 0, lastFever = run.fever === 1;
+  const s = run.sword, L = s.level, o = odds(s), b = run.buffs; // odds first: the fever counter must still count this strike
   if (feverStrike) run.fever--; else run.stam--;
   run.stats.strikes++;
-  const s = run.sword, L = s.level, o = odds(s), b = run.buffs;
   const cum = [o.brk, o.brk + o.dmg, o.brk + o.dmg + o.keep, o.brk + o.dmg + o.keep + o.succ, 1];
   const seg = { brk: 0, dmg: 1, keep: 2, succ: 3, great: 4 };
   let r, roll;
@@ -339,49 +347,50 @@ function strike() {
   run.firstOfDay = false;
   if (b.cui > 0) b.cui--; delete b.zhu; delete b.tian; delete b.hu;
   const raw = r; let note = '';
-  if (r === 'keep' && has('mo') && R() < 0.35) { r = 'succ'; note = T('磨刀石：改成成功', 'Whetstone: turned into a success'); }
-  if (r === 'brk' && s.shape === 'yu' && R() < 0.3) { r = 'great'; note = T('咸鱼翻身！', 'Fish flip!'); }
-  if (r === 'brk' && has('fu') && !run.charmUsed) { r = 'dmg'; run.charmUsed = true; note = T('护身符替你挡了一次碎裂', 'The Charm stopped a break'); }
-  if (r === 'dmg' && s.shape === 'maton' && R() < 0.3) { r = 'succ'; note = T('吸回来了！', 'Sucked back!'); }
-  if (s.shape === 'jitui' && !feverStrike && R() < 0.4) { run.stam++; note = note || T('啃了口鸡腿，没花体力', 'Took a bite, no stamina spent'); }
+  if (r === 'keep' && has('mo') && R() < 0.35) { r = 'succ'; note = () => T('磨刀石：改成成功', 'Whetstone: turned into a success'); }
+  if (r === 'brk' && s.shape === 'yu' && R() < 0.3) { r = 'great'; note = () => T('咸鱼翻身！', 'Fish flip!'); }
+  if (r === 'brk' && has('fu') && !run.charmUsed) { r = 'dmg'; run.charmUsed = true; note = () => T('护身符替你挡了一次碎裂', 'The Charm stopped a break'); }
+  if (r === 'dmg' && s.shape === 'maton' && R() < 0.3) { r = 'succ'; note = () => T('吸回来了！', 'Sucked back!'); }
+  if (s.shape === 'jitui' && !feverStrike && R() < 0.4) { run.stam++; note = note || (() => T('啃了口鸡腿，没花体力', 'Took a bite, no stamina spent')); }
   let delta = 0;
-  if (r === 'succ') { delta = 1; if (s.shape === 'dianzuan' && R() < 0.15) { delta = 2; note = note || T('电钻连钻两下！', 'Double drill!'); } run.streak++; }
+  if (r === 'succ') { delta = 1; if (s.shape === 'dianzuan' && R() < 0.15) { delta = 2; note = note || (() => T('电钻连钻两下！', 'Double drill!')); } run.streak++; }
   else if (r === 'great') { delta = stepUp(s); run.streak++; }
   else if (r === 'keep') run.streak = 0;
   else if (r === 'dmg') {
     run.streak = 0;
-    if (s.shape === 'cong' && R() < 0.5) note = note || T('大葱很韧：没掉级', 'Tough leek: kept the level'); else delta = L > 0 ? -1 : 0;
-    if (has('gu')) { run.stam++; note = note || T('反骨：返还 1 点体力', 'Contrarian: +1 stamina back'); }
+    if (s.shape === 'cong' && R() < 0.5) note = note || (() => T('大葱很韧：没掉级', 'Tough leek: kept the level')); else delta = L > 0 ? -1 : 0;
+    if (has('gu')) { run.stam++; note = note || (() => T('反骨：返还 1 点体力', 'Contrarian: +1 stamina back')); }
   } else if (r === 'brk') {
     run.streak = 0; run.stats.breaks++;
-    if (has('lu')) { const g = value(s) * 0.4; run.gold += g; note = T('回炉：拿回 ', 'Recycler: got back ') + fmt(g); }
+    if (has('lu')) { const g = value(s) * 0.4; run.gold += g; note = () => T('回炉：拿回 ', 'Recycler: got back ') + fmt(g); }
   }
-  if (has('lian') && run.streak >= 3 && (r === 'succ' || r === 'great')) { run.forceGreat = true; note = note || T('连击谱：下一锤必定大成功', 'Combo Manual: next strike is a great success'); }
+  if (has('lian') && run.streak >= 3 && (r === 'succ' || r === 'great')) { run.forceGreat = true; note = note || (() => T('连击谱：下一锤必定大成功', 'Combo Manual: next strike is a great success')); }
   const oldTier = tierOf(L).idx, nm = wname(s), streakNow = run.streak;
   if (has('lian') && run.forceGreat && run.streak >= 3) run.streak = 0;
   if (r === 'brk') { fx.ghost = { ...s }; newBlank(); fx.born = performance.now() + 450; }
   else { s.level = Math.max(0, L + delta); noteCodex(s); }
   run.stats.maxLevel = Math.max(run.stats.maxLevel, run.sword.level);
   const after = run.sword.level, tierUp = r !== 'brk' && tierOf(after).idx > oldTier;
-  const msg = { succ: [T('成功 +' + L + ' → +' + after, 'Success +' + L + ' → +' + after), 's'], great: [T('大成功！+' + L + ' → +' + after, 'Great! +' + L + ' → +' + after), 'g'], keep: [T('无变化，还是 +' + L, 'No change, still +' + L), ''], dmg: [T('受损 +' + L + ' → +' + after, 'Damaged +' + L + ' → +' + after), 'd'], brk: [T('碎了！+' + L + ' 的' + nm + '没了', 'Shattered! The +' + L + ' ' + nm + ' is gone'), 'b'] }[r];
-  addLog(msg[0], msg[1]); if (note) addLog(note, 'c');
-  if (nearBreak) addLog(T('好险！差 ' + pct(roll - o.brk) + ' 就碎了', 'Close call! ' + pct(roll - o.brk) + ' from breaking'), 'd');
-  if (r === 'great' && R() < 0.12) dropItem(T('大成功的火星里', 'In the sparks'));
+  const msgOf = () => ({ succ: [T('成功 +' + L + ' → +' + after, 'Success +' + L + ' → +' + after), 's'], great: [T('大成功！+' + L + ' → +' + after, 'Great! +' + L + ' → +' + after), 'g'], keep: [T('无变化，还是 +' + L, 'No change, still +' + L), ''], dmg: [T('受损 +' + L + ' → +' + after, 'Damaged +' + L + ' → +' + after), 'd'], brk: [T('碎了！+' + L + ' 的' + wname(s) + '没了', 'Shattered! The +' + L + ' ' + wname(s) + ' is gone'), 'b'] })[r];
+  addLog(() => msgOf()[0], msgOf()[1]); if (note) addLog(note, 'c');
+  if (nearBreak) addLog(() => T('好险！差 ' + pct(roll - o.brk) + ' 就碎了', 'Close call! ' + pct(roll - o.brk) + ' from breaking'), 'd');
+  if (r === 'great' && R() < 0.12) dropItem(() => T('大成功的火星里', 'In the sparks'));
   let feverStart = false;
   if (!feverStrike) {
     run.fire = clamp((run.fire || 0) + ({ succ: 1, great: 2, keep: 0, dmg: -2 }[r] ?? -99), 0, FIRE_MAX);
-    if (run.fire >= FIRE_MAX) { run.fire = 0; run.fever = FEVER_LEN; feverStart = true; addLog(T('火候满了，上头时刻！接下来 ' + FEVER_LEN + ' 锤不花体力、不会碎', 'The fire is roaring: FEVER! Next ' + FEVER_LEN + ' strikes cost nothing and never break'), 'g'); }
-  } else if (!run.fever) addLog(T('上头时刻结束，冷静下来了', 'Fever over, cooling down'));
+    if (run.fire >= FIRE_MAX) { run.fire = 0; run.fever = FEVER_LEN; feverStart = true; addLog(() => T('火候满了，上头时刻！接下来 ' + FEVER_LEN + ' 锤不花体力、不会碎', 'The fire is roaring: FEVER! Next ' + FEVER_LEN + ' strikes cost nothing and never break'), 'g'); }
+  } else if (!run.fever) addLog(() => T('上头时刻结束，冷静下来了', 'Fever over, cooling down'));
   tickMarket();
-  fx.strike({ r, raw, delta, roll, seg: seg[raw], nearBreak, tierUp, note, level: after, streak: streakNow, feverStart, feverEnd: feverStrike && !run.fever });
+  if (run.fever === 1) addLog(() => T('注意：上头时刻只剩最后一锤，这一锤会碎！', 'Careful: one fever strike left, and it CAN break!'), 'd');
+  fx.strike({ r, raw, delta, roll, seg: seg[raw], nearBreak, tierUp, note, level: after, streak: streakNow, feverStart, feverEnd: feverStrike && !run.fever, lastWarn: run.fever === 1, lastFever });
   sfx('hit');
   render(); saveRun();
 }
 function sellSword(s, where) {
-  const p = priceOf(s); delete run.buffs.ya;
+  const p = priceOf(s), wh = typeof where === 'function' ? where : () => where; delete run.buffs.ya;
   run.gold += p; run.stats.sold++; run.stats.maxSale = Math.max(run.stats.maxSale, p);
-  addLog(T('卖出' + where + ' +' + s.level + ' ' + N(WP[s.shape]) + '，得 ', 'Sold +' + s.level + ' ' + N(WP[s.shape]) + where + ' for ') + fmt(p) + T('（现价 ×', ' (price ×') + run.mk.now.toFixed(2) + T('）', ')'), 'c');
-  if (s.level >= 20) { dropItem(T('大主顾打赏', 'A big tip')); dropItem(T('大主顾打赏', 'A big tip')); } else if (s.level >= 10) dropItem(T('主顾打赏', 'A tip'));
+  addLog(() => T('卖出' + wh() + ' +' + s.level + ' ' + N(WP[s.shape]) + '，得 ', 'Sold +' + s.level + ' ' + N(WP[s.shape]) + wh() + ' for ') + fmt(p) + T('（现价 ×', ' (price ×') + run.mk.now.toFixed(2) + T('）', ')'), 'c');
+  if (s.level >= 20) { dropItem(() => T('大主顾打赏', 'A big tip')); dropItem(() => T('大主顾打赏', 'A big tip')); } else if (s.level >= 10) dropItem(() => T('主顾打赏', 'A tip'));
   fx.sold(p, s.level >= 15); sfx('coin'); vib(25);
   return p;
 }
@@ -394,7 +403,7 @@ function storeSword() {
   if (!run || modalOpen()) return;
   if (run.sword.level < 1) { toast(T('胚子不用上架，打到 +1 再说', 'Blanks stay on the anvil. Get it to +1 first')); return; }
   if (run.rack.length >= rackCap()) { toast(T('剑架满了。卖掉或者熔掉一件再放', 'The rack is full. Sell or smelt something first')); setTab('rack'); return; }
-  ensureAudio(); run.rack.push(run.sword); addLog(T('把 +' + run.sword.level + ' ' + N(WP[run.sword.shape]) + ' 挂上剑架', 'Hung the +' + run.sword.level + ' ' + N(WP[run.sword.shape]) + ' on the rack'));
+  ensureAudio(); run.rack.push(run.sword); addLog(() => T('把 +' + run.sword.level + ' ' + N(WP[run.sword.shape]) + ' 挂上剑架', 'Hung the +' + run.sword.level + ' ' + N(WP[run.sword.shape]) + ' on the rack'));
   sfx('keep'); newBlank(); render(); saveRun();
 }
 function feedMul(s) { return 1 + 0.05 * s.level * (s.shape === run.sword.shape ? 2 : 1) * (has('tun') ? 2 : 1); }
@@ -411,11 +420,11 @@ function rackAction(i) {
       <button class="btn ghost" id="rBack" type="button">${T('先放着', 'Leave it')}</button>
     </div>`);
   drawIcon($('#bigSword'), s);
-  $('#rSell').onclick = () => { run.rack.splice(i, 1); sellSword(s, T('剑架上的', ' from the rack')); closeSheet(); render(); saveRun(); };
-  $('#rTake').onclick = () => { if (anvil.level >= 1) run.rack[i] = anvil; else run.rack.splice(i, 1); run.sword = s; fx.born = performance.now(); run.streak = 0; addLog(T('把 +' + s.level + ' ' + N(wp) + ' 拿上砧子', 'Put the +' + s.level + ' ' + N(wp) + ' on the anvil')); closeSheet(); render(); saveRun(); };
+  $('#rSell').onclick = () => { run.rack.splice(i, 1); sellSword(s, () => T('剑架上的', ' from the rack')); closeSheet(); render(); saveRun(); };
+  $('#rTake').onclick = () => { if (anvil.level >= 1) run.rack[i] = anvil; else run.rack.splice(i, 1); run.sword = s; fx.born = performance.now(); run.streak = 0; addLog(() => T('把 +' + s.level + ' ' + N(wp) + ' 拿上砧子', 'Put the +' + s.level + ' ' + N(wp) + ' on the anvil')); closeSheet(); render(); saveRun(); };
   $('#rFeed').onclick = () => {
     run.rack.splice(i, 1); run.sword.mul *= fm; fx.feed(); sfx('great'); vib([20, 30, 40]);
-    addLog(T('大鱼吃小鱼：熔掉 +' + s.level + ' ' + N(wp) + '，砧上那件估价 ×', 'Big fish eats small fish: smelted the +' + s.level + ' ' + N(wp) + ', anvil item value ×') + fm.toFixed(2), 'g');
+    addLog(() => T('大鱼吃小鱼：熔掉 +' + s.level + ' ' + N(wp) + '，砧上那件估价 ×', 'Big fish eats small fish: smelted the +' + s.level + ' ' + N(wp) + ', anvil item value ×') + fm.toFixed(2), 'g');
     closeSheet(); render(); saveRun();
   };
   $('#rBack').onclick = closeSheet;
@@ -437,7 +446,7 @@ function useItem(id) {
   else if (id === 'ya') b.ya = true;
   else if (id === 'xia') run.extraSlots++;
   else if (id === 'li') run.mk.li = true;
-  addLog(T('用了「' + N(it) + '」：', 'Used ' + N(it) + ': ') + D(it), 'c'); sfx('succ');
+  addLog(() => T('用了「' + N(it) + '」：', 'Used ' + N(it) + ': ') + D(it), 'c'); sfx('succ');
   closeSheet(); render(); saveRun();
 }
 function itemSheet(id) {
@@ -451,7 +460,7 @@ function shopSheet() {
   openSheet(`<h2>${T('杂货铺', 'General Store')}</h2><p>${T('每天进的货不一样，价钱跟着欠款涨。你有 ', 'New stock every day; prices follow the debt. You have ')}<b style="color:var(--gold)">${fmt(run.gold)}</b>${T(' 金。', ' gold.')}</p><div class="cards">${rows}</div><div class="btns"><button class="btn ghost" id="sBack" type="button">${T('走了', 'Leave')}</button></div>`);
   $('#sheet').querySelectorAll('[data-k]').forEach((bt) => bt.onclick = () => {
     const st = run.stock[+bt.dataset.k], p = itemPrice(st.id); if (st.sold || run.gold < p) return;
-    run.gold -= p; st.sold = true; addItem(st.id); addLog(T('买了「' + N(IMAP[st.id]) + '」，花 ', 'Bought ' + N(IMAP[st.id]) + ' for ') + fmt(p), 'c'); sfx('coin'); render(); saveRun(); shopSheet();
+    run.gold -= p; st.sold = true; addItem(st.id); addLog(() => T('买了「' + N(IMAP[st.id]) + '」，花 ', 'Bought ' + N(IMAP[st.id]) + ' for ') + fmt(p), 'c'); sfx('coin'); render(); saveRun(); shopSheet();
   });
   $('#sBack').onclick = closeSheet;
 }
@@ -462,15 +471,15 @@ function rest() {
   restArmed = 0; endDay();
 }
 function endDay() {
-  if (has('ye')) { let n = 0; for (const s of [run.sword, ...run.rack]) if (s.level > 0) { s.mul *= 1.08; n++; } if (n) addLog(T('夜市：' + n + ' 件东西估价 +8%', 'Night Market: ' + n + ' items gained 8% value'), 'c'); }
-  for (const s of run.rack) if (s.shape === 'fagun') { s.mul *= 1.1; addLog(T('剑架上的法棍又硬了一点：估价 +10%', 'The baguette on the rack got harder: +10% value'), 'c'); }
-  if (run.fever > 0) { run.fever = 0; addLog(T('睡了一觉，上头时刻没了', 'Slept it off. Fever is over')); }
+  if (has('ye')) { let n = 0; for (const s of [run.sword, ...run.rack]) if (s.level > 0) { s.mul *= 1.08; n++; } if (n) addLog(() => T('夜市：' + n + ' 件东西估价 +8%', 'Night Market: ' + n + ' items gained 8% value'), 'c'); }
+  for (const s of run.rack) if (s.shape === 'fagun') { s.mul *= 1.1; addLog(() => T('剑架上的法棍又硬了一点：估价 +10%', 'The baguette on the rack got harder: +10% value'), 'c'); }
+  if (run.fever > 0) { run.fever = 0; addLog(() => T('睡了一觉，上头时刻没了', 'Slept it off. Fever is over')); }
   const close = run.mk.now; closeMarket();
   run.day++; run.stam = maxStam(); run.firstOfDay = true; restock();
   ensureAudio();
   if (run.day > DAYS) { settle(); return; }
   const chg = run.mk.open / close - 1;
-  addLog(T('第 ' + run.day + ' 天，' + (chg >= 0 ? '高开 ' : '低开 ') + pct(Math.abs(chg)) + '，开盘 ×' + run.mk.open.toFixed(2) + '。杂货铺进了新货', 'Day ' + run.day + ': opened ' + (chg >= 0 ? 'up ' : 'down ') + pct(Math.abs(chg)) + ' at ×' + run.mk.open.toFixed(2) + '. New stock at the store'), chg >= 0 ? 'b' : 's');
+  addLog(() => T('第 ' + run.day + ' 天，' + (chg >= 0 ? '高开 ' : '低开 ') + pct(Math.abs(chg)) + '，开盘 ×' + run.mk.open.toFixed(2) + '。杂货铺进了新货', 'Day ' + run.day + ': opened ' + (chg >= 0 ? 'up ' : 'down ') + pct(Math.abs(chg)) + ' at ×' + run.mk.open.toFixed(2) + '. New stock at the store'), chg >= 0 ? 'b' : 's');
   fx.pop(T('第 ' + run.day + ' 天', 'Day ' + run.day), '#F3E9DC'); sfx('day');
   render(); saveRun();
 }
@@ -501,7 +510,7 @@ function draft(after) {
   if (!pool.length) { if (after) after(); else closeSheet(); return; }
   openSheet(`<h2>${T('挑一本秘籍', 'Pick a seal')}</h2><p>${T('只能拿一本，整局有效。', 'Take one. It lasts the whole run.')}</p><div class="cards">${pool.map((r) => `<button class="card" type="button" data-id="${r.id}"><span class="seal">${r.ch}</span><b>${N(r)}</b><span>${D(r)}</span></button>`).join('')}</div>`);
   $('#sheet').querySelectorAll('.card').forEach((b) => b.onclick = () => {
-    run.relics.push(b.dataset.id); addLog(T('得到秘籍「' + N(RMAP[b.dataset.id]) + '」', 'Got the seal: ' + N(RMAP[b.dataset.id])), 'c');
+    run.relics.push(b.dataset.id); addLog(() => T('得到秘籍「' + N(RMAP[b.dataset.id]) + '」', 'Got the seal: ' + N(RMAP[b.dataset.id])), 'c');
     if (b.dataset.id === 'huo2') restock();
     sfx('succ'); render(); saveRun();
     if (after) after(); else closeSheet();
@@ -519,7 +528,7 @@ const offerPrice = (o) => Math.round(baseQuota() * OFFERS.find((x) => x.id === o
 function offerText(o) {
   const d = OFFERS.find((x) => x.id === o.id);
   if (o.id === 'seal') { const r = RMAP[o.seal]; return [T('秘籍「' + N(r) + '」', 'Seal: ' + N(r)), D(r), r.ch]; }
-  if (o.id === 'mat') { const m = nextMat(); return [N(d), (LANG === 'en' ? d.descEn : d.desc).replace('{0}', m ? N(m) : '—'), d.ch]; }
+  if (o.id === 'mat') { const m = nextMat(); return [N(d), D(d).replace('{0}', m ? N(m) : '—'), d.ch]; }
   return [N(d), D(d), d.ch];
 }
 function market() {
@@ -530,7 +539,7 @@ function market() {
   const loan = `<div class="offer loan${f.loaned ? ' bought' : ''}"><span class="seal">贷</span><b>${T('钱庄借款', 'Bank loan')}</b><button class="btn ghost" type="button" id="fLoan" ${f.loaned ? 'disabled' : ''}>${f.loaned ? T('借过了', 'Taken') : T('借 ', 'Borrow ') + fmt(loanAmt)}</button><span>${T('现在拿 ' + fmt(loanAmt) + '，下一期连本带利多还 ' + fmt(loanDue) + '。还不上照样收铺子。', 'Get ' + fmt(loanAmt) + ' now, owe ' + fmt(loanDue) + ' more next period. Miss it and you lose the shop.')}</span></div>`;
   openSheet(`<h2>${T('集市', 'Bazaar')}</h2><p>${T('每还清一期开一次集，价钱跟着下一期欠款走。你有 ', 'Opens after every repaid period; prices follow the next debt. You have ')}<b class="gold-now">${fmt(run.gold)}</b></p><div class="cards">${rows}${loan}</div><div class="btns"><button class="btn ghost" id="fRe" type="button" ${run.gold < reroll ? 'disabled' : ''}>${T('换一批货', 'Reroll')} · ${fmt(reroll)}</button><button class="btn" id="fGo" type="button">${T('离开，开始第 ' + run.period + ' 期', 'Leave and start period ' + run.period)}</button></div>`);
   $('#sheet').querySelectorAll('[data-o]').forEach((bt) => bt.onclick = () => buyOffer(+bt.dataset.o));
-  $('#fLoan').onclick = () => { if (f.loaned) return; f.loaned = true; run.gold += loanAmt; run.loan += loanDue; addLog(T('向钱庄借了 ' + fmt(loanAmt) + '，下期多还 ' + fmt(loanDue), 'Borrowed ' + fmt(loanAmt) + ' from the bank; ' + fmt(loanDue) + ' more due next period'), 'd'); sfx('coin'); saveRun(); render(); market(); };
+  $('#fLoan').onclick = () => { if (f.loaned) return; f.loaned = true; run.gold += loanAmt; run.loan += loanDue; addLog(() => T('向钱庄借了 ' + fmt(loanAmt) + '，下期多还 ' + fmt(loanDue), 'Borrowed ' + fmt(loanAmt) + ' from the bank; ' + fmt(loanDue) + ' more due next period'), 'd'); sfx('coin'); saveRun(); render(); market(); };
   $('#fRe').onclick = () => { if (run.gold < reroll) return; run.gold -= reroll; const r2 = f.rerolls + 1; rollMarket(); run.fair.rerolls = r2; run.fair.loaned = f.loaned; sfx('keep'); saveRun(); render(); market(); };
   $('#fGo').onclick = () => { run.fair = null; closeSheet(); render(); saveRun(); };
   if (DEMO) setTimeout(() => $('#fGo') && $('#fGo').click(), 1400);
@@ -547,7 +556,7 @@ function buyOffer(k) {
   else if (o.id === 'pack') for (let i = 0; i < 3; i++) addItem(pick(ITEMS.map((x) => x.id)));
   else if (o.id === 'fire') run.fire = Math.min(FIRE_MAX - 1, (run.fire || 0) + 6);
   else if (o.id === 'luck') b.luck += 1;
-  addLog(T('集市：买了「' + offerText(o)[0] + '」，花 ', 'Bazaar: bought ' + offerText(o)[0] + ' for ') + fmt(p), 'c');
+  addLog(() => T('集市：买了「' + offerText(o)[0] + '」，花 ', 'Bazaar: bought ' + offerText(o)[0] + ' for ') + fmt(p), 'c');
   sfx('pay'); saveRun(); render(); market();
 }
 function gameOver(lines) {
@@ -567,7 +576,7 @@ function startRun() {
   const owned = MATS.filter((m) => meta.mats.includes(m.id));
   const begin = (id) => { meta.mat = id; saveMeta(); closeSheet(); hideScreens(); newRun(id); setTab('market'); render(); if (!meta.seenHelp) showHelp(); };
   if (owned.length < 2) return begin('iron');
-  openSheet(`<h2>${T('今天打什么料？', 'Which material today?')}</h2><div class="cards">${owned.map((m) => `<button class="card" type="button" data-id="${m.id}"><span class="seal" style="background:${m.color};color:#120E0C">${LANG === 'en' ? m.en[0] : m.name[0]}</span><b>${N(m)} · ${T('底价', 'base')} ${m.base}</b><span>${D(m)}</span></button>`).join('')}</div>`);
+  openSheet(`<h2>${T('今天打什么料？', 'Which material today?')}</h2><div class="cards">${owned.map((m) => `<button class="card" type="button" data-id="${m.id}"><span class="seal" style="background:${m.color};color:#120E0C">${N(m)[0]}</span><b>${N(m)} · ${T('底价', 'base')} ${m.base}</b><span>${D(m)}</span></button>`).join('')}</div>`);
   $('#sheet').querySelectorAll('.card').forEach((b) => b.onclick = () => begin(b.dataset.id));
 }
 
@@ -579,26 +588,32 @@ function closeSheet() { $('#modal').hidden = true; }
 function hideScreens() { $('#titleScreen').hidden = true; $('#shopScreen').hidden = true; $('#codexScreen').hidden = true; }
 let toastT = 0;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
-function addLog(t, cls = '') { if (!run) return; run.log.unshift([t, cls]); run.log.length = Math.min(run.log.length, 5); }
+function addLog(t, cls = '') { if (!run) return; const e = typeof t === 'function' ? [inLang('zh', t), inLang('en', t), cls] : [t, t, cls]; run.log.unshift(e); run.log.length = Math.min(run.log.length, 5); }
+const logText = (e) => { const [zh, en] = e.length >= 3 ? e : [e[0], e[0]]; return LANG === 'en' ? en : LANG === 'zht' ? toTrad(zh) : zh; };
 let tab = 'market';
 function setTab(t) { tab = t; document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t)); ['rack', 'bag', 'market', 'seals'].forEach((k) => { $('#pane-' + k).hidden = k !== t; }); if (run) render(); }
 document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 // static page text
 function applyStatic() {
-  document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-CN';
+  document.documentElement.lang = LANG === 'en' ? 'en' : LANG === 'zht' ? 'zh-Hant' : 'zh-CN';
+  const rs = document.documentElement.style;
+  if (LANG === 'zht') {
+    if (!$('#tcfonts')) { const l = document.createElement('link'); l.id = 'tcfonts'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap'; document.head.appendChild(l); }
+    rs.setProperty('--sans', '"Noto Sans TC","Noto Sans SC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif'); rs.setProperty('--serif', '"Noto Serif TC","Noto Serif SC","Songti TC",serif');
+  } else { rs.removeProperty('--sans'); rs.removeProperty('--serif'); }
   document.title = T('一锤子买卖', 'One Hammer Deal');
   const set = (id, zh, en) => { const el = $(id); if (el) el.textContent = T(zh, en); };
   set('#debtLbl', '欠钱庄', 'Debt'); set('#goldLbl', '金', 'Gold'); set('#valLbl', '估价', 'Value');
   set('#strikeLbl', '锤', 'Strike'); set('#sellLbl', '出售', 'Sell'); set('#storeLbl', '上架', 'Rack');
   set('#mLbl', '剑市 · 现价', 'Blade market · now');
   set('#tTag', '打铁 · 赌运气 · 还高利贷', 'Forge · Gamble · Pay the loan shark');
-  set('#tNew', '开张', 'New run'); set('#tCont', '接着打', 'Continue'); set('#tHelp', '规矩', 'How to play'); set('#tLang', 'English', '中文');
+  set('#tNew', '开张', 'New run'); set('#tCont', '接着打', 'Continue'); set('#tHelp', '规矩', 'How to play'); set('#tLang', '语言 · Language', 'Language · 语言');
   set('#tShopLbl', '铺子 · 名望', 'Workshop · Fame'); set('#tCodexLbl', '兵器图鉴 ·', 'Weapon codex ·');
   set('#shopH', '铺子', 'Workshop'); set('#sFameLbl', '名望', 'Fame'); set('#shopFoot', '每局结束按撑过的期数和最高卖价得名望。升级永久有效。', 'Each run ends with fame based on periods survived and your best sale. Upgrades are permanent.');
   set('#secMat', '料子', 'Materials'); set('#secUpg', '手艺', 'Skills'); set('#shopBack', '回去', 'Back');
   set('#codexFoot', '打出过的兵器会记在这里。收集得越多，铺子的永久加成越多。', 'Every weapon you forge is recorded here. Collect more for permanent bonuses.'); set('#codexBack', '回去', 'Back');
   const en = LANG === 'en', logo = $('.logo'); logo.textContent = T('一锤子买卖', 'One Hammer Deal');
-  Object.assign(logo.style, { fontFamily: en ? 'var(--serif)' : '', fontSize: en ? 'clamp(34px,9.5vw,64px)' : '', whiteSpace: en ? 'normal' : '', fontWeight: en ? '900' : '' });
+  Object.assign(logo.style, { fontFamily: en || LANG === 'zht' ? 'var(--serif)' : '', fontSize: en ? 'clamp(34px,9.5vw,64px)' : '', whiteSpace: en ? 'normal' : '', fontWeight: en ? '900' : '' });
   $('#tTag').style.letterSpacing = en ? '.08em' : '';
   $('#strikeLbl').style.font = en ? '900 26px var(--serif)' : '';
   $('#codexBtn').textContent = T('鉴', 'Dex'); $('#codexBtn').style.font = en ? '700 12px var(--sans)' : '400 19px var(--brush)';
@@ -606,11 +621,19 @@ function applyStatic() {
   const tl = { market: ['行情', 'Market'], rack: ['剑架', 'Rack'], bag: ['背包', 'Bag'], seals: ['秘籍', 'Seals'] };
   document.querySelectorAll('.tabs [data-tab]').forEach((b) => { b.textContent = T(...tl[b.dataset.tab]); });
 }
-function setLang(l) { LANG = l; meta.lang = l; saveMeta(); applyStatic(); if (!$('#titleScreen').hidden) showTitle(); if (!$('#shopScreen').hidden) showShop(); if (!$('#codexScreen').hidden) showCodex(); render(); }
+function setLang(l) {
+  LANG = l; meta.lang = l; saveMeta(); applyStatic();
+  if (!$('#titleScreen').hidden) showTitle(); if (!$('#shopScreen').hidden) showShop(); if (!$('#codexScreen').hidden) showCodex();
+  render(); if (run && tab === 'rack') render();
+}
+function langSheet(back) {
+  openSheet(`<h2>语言 · 語言 · Language</h2><div class="btns">${LANGS.map(([k, n]) => `<button class="btn${k === LANG ? '' : ' ghost'}" type="button" data-l="${k}">${n}${k === LANG ? ' ✓' : ''}</button>`).join('')}</div>`);
+  $('#sheet').querySelectorAll('[data-l]').forEach((b) => b.onclick = () => { setLang(b.dataset.l); if (back) back(); else closeSheet(); });
+}
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false;
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.6 · 存档在这台设备的浏览器里', 'v0.6 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.7 · 存档在这台设备的浏览器里', 'v0.7 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -653,7 +676,7 @@ function showHelp() {
     `Tap ${c('#FFF6E0', 'Strike')} to hammer (1 stamina). The needle on the rainbow bar shows where the roll landed: ${c('var(--o-succ)', 'success')} +1, ${c('var(--o-great)', 'great')} +2, damage -1, or the item ${c('var(--o-brk)', 'breaks')}.`,
     'Higher levels are worth more (+60% per level) and break more easily. There is no level cap.',
     'The blade price moves with every strike. Sleeping closes the day; tomorrow can open higher or lower. Sale price = value × current price.',
-    `Successes fill the ${c('#FFD23F', 'fire meter')}. At 10 you enter ${c('#FFD23F', 'Fever')}: 8 strikes that cost no stamina, never break and are more likely to be great.`,
+    `Successes fill the ${c('#FFD23F', 'fire meter')}. At 10 you enter ${c('#FFD23F', 'Fever')}: 8 strikes that cost no stamina with +15% great success. The first 7 can't break or get damaged; ${c('#FF6A4D', 'the last one can')}, so decide whether to push your luck.`,
     'Hang items on the rack to keep them, and come back with a Ward or a Heaven Hammer. Small items can be smelted into big ones.',
     'If you can’t pay, the collector takes items from the rack first. After every payment you pick a seal and visit the Bazaar to spend spare gold.',
     `20 weapons in 5 rarities: ${c('#E4DED3', 'white')} · ${c('#5FD068', 'green')} · ${c('#4FA6FF', 'blue')} · ${c('#F5C542', 'gold')} · ${c('#FF4D4D', 'red')}. Collecting them gives permanent bonuses (Dex, top right).`,
@@ -662,12 +685,12 @@ function showHelp() {
     `点「锤」打铁，每锤花 1 点体力。彩虹条上的指针落在哪，结果就是哪：${c('var(--o-succ)', '成功')} +1、${c('var(--o-great)', '大成功')} +2，也可能受损 -1，甚至${c('var(--o-brk)', '碎掉')}。`,
     '等级越高越值钱（每级涨 60%），也越容易碎。等级没有上限，数字一直往上走：万、亿、兆……恒河沙、阿僧祇、那由他、不可思议、无量大数。',
     '剑价每锤都在跳，睡一觉收盘，第二天跳空开盘。卖价 = 估价 × 现价，看准了再卖。',
-    `每次成功给${c('#FFD23F', '火候')}加一格（大成功加两格，受损扣两格，碎了清零）。满 10 格进入${c('#FFD23F', '上头时刻')}：接下来 8 锤不花体力、不会碎、不会受损、大成功率 +15%。`,
+    `每次成功给${c('#FFD23F', '火候')}加一格（大成功加两格，受损扣两格，碎了清零）。满 10 格进入${c('#FFD23F', '上头时刻')}：接下来 8 锤不花体力、大成功率 +15%，前 7 锤不会碎也不会受损；${c('#FF6A4D', '最后一锤照常会碎')}，要不要赌你自己定。`,
     '东西可以挂上剑架存着，等买到护剑符、天工锤再拿下来接着打；小件也能熔进大件里。',
     '还款日钱不够，剑架上的东西会先被拿去抵债。每还清一期挑一本秘籍，再逛一次集市，把多出来的金子花掉。',
     `一共 20 种兵器，分 5 档：${c('#E4DED3', '白')} · ${c('#5FD068', '绿')} · ${c('#4FA6FF', '蓝')} · ${c('#F5C542', '金')} · ${c('#FF4D4D', '红')}，收进图鉴（右上角「鉴」）有永久加成。`,
   ];
-  openSheet(`<h2>${T('规矩', 'How to play')}</h2><ol class="help">${items.map((x) => `<li>${x}</li>`).join('')}</ol><p>${T('电脑上：空格 = 锤，S = 出售，A = 上架，E = 睡觉', 'Keyboard: Space = strike, S = sell, A = rack, E = sleep')}</p><div class="btns"><button class="btn" id="mOk" type="button">${T('开干', "Let's go")}</button></div>`);
+  openSheet(`<h2>${T('规矩', 'How to play')}</h2><ol class="help">${items.map((x) => `<li>${LANG === 'zht' ? toTrad(x) : x}</li>`).join('')}</ol><p>${T('电脑上：空格 = 锤，S = 出售，A = 上架，E = 睡觉', 'Keyboard: Space = strike, S = sell, A = rack, E = sleep')}</p><div class="btns"><button class="btn" id="mOk" type="button">${T('开干', "Let's go")}</button></div>`);
   $('#mOk').onclick = closeSheet;
 }
 $('#tNew').onclick = () => { if (run && !confirmNew()) return; startRun(); };
@@ -678,13 +701,13 @@ $('#tShop').onclick = showShop;
 $('#tCodex').onclick = () => { $('#titleScreen').dataset.from = 'title'; showCodex(); };
 $('#codexBtn').onclick = () => { if (!run) return; $('#titleScreen').dataset.from = 'game'; showCodex(); };
 $('#tHelp').onclick = showHelp;
-$('#tLang').onclick = () => setLang(LANG === 'en' ? 'zh' : 'en');
+$('#tLang').onclick = () => langSheet();
 $('#shopBack').onclick = showTitle;
 $('#menuBtn').onclick = () => {
-  openSheet(`<h2>${T('歇会儿', 'Paused')}</h2><div class="btns"><button class="btn" id="mRes" type="button">${T('接着打', 'Resume')}</button><button class="btn ghost" id="mCodex" type="button">${T('兵器图鉴', 'Weapon codex')} · ${codexN()}/${WEAPONS.length}</button><button class="btn ghost" id="mLang" type="button">${T('Language: English', '语言：中文')}</button><button class="btn ghost" id="mSnd" type="button">${T('声音：', 'Sound: ')}${meta.muted ? T('关', 'off') : T('开', 'on')}</button><button class="btn ghost" id="mVib" type="button">${T('震动：', 'Vibration: ')}${meta.vibe ? T('开', 'on') : T('关', 'off')}</button><button class="btn ghost" id="mRules" type="button">${T('规矩', 'How to play')}</button><button class="btn ghost" id="mHome" type="button">${T('回到门口（自动存档）', 'Main menu (auto-saved)')}</button></div>`);
+  openSheet(`<h2>${T('歇会儿', 'Paused')}</h2><div class="btns"><button class="btn" id="mRes" type="button">${T('接着打', 'Resume')}</button><button class="btn ghost" id="mCodex" type="button">${T('兵器图鉴', 'Weapon codex')} · ${codexN()}/${WEAPONS.length}</button><button class="btn ghost" id="mLang" type="button">${T('语言 · Language：', 'Language · 语言: ')}${LANGS.find(([k]) => k === LANG)[1]}</button><button class="btn ghost" id="mSnd" type="button">${T('声音：', 'Sound: ')}${meta.muted ? T('关', 'off') : T('开', 'on')}</button><button class="btn ghost" id="mVib" type="button">${T('震动：', 'Vibration: ')}${meta.vibe ? T('开', 'on') : T('关', 'off')}</button><button class="btn ghost" id="mRules" type="button">${T('规矩', 'How to play')}</button><button class="btn ghost" id="mHome" type="button">${T('回到门口（自动存档）', 'Main menu (auto-saved)')}</button></div>`);
   $('#mRes').onclick = closeSheet;
   $('#mCodex').onclick = () => { closeSheet(); $('#titleScreen').dataset.from = 'game'; showCodex(); };
-  $('#mLang').onclick = () => { setLang(LANG === 'en' ? 'zh' : 'en'); $('#menuBtn').onclick(); };
+  $('#mLang').onclick = () => langSheet(() => $('#menuBtn').onclick());
   $('#mSnd').onclick = () => { meta.muted = !meta.muted; saveMeta(); $('#mSnd').textContent = T('声音：', 'Sound: ') + (meta.muted ? T('关', 'off') : T('开', 'on')); };
   $('#mVib').onclick = () => { meta.vibe = !meta.vibe; saveMeta(); vib(30); $('#mVib').textContent = T('震动：', 'Vibration: ') + (meta.vibe ? T('开', 'on') : T('关', 'off')); };
   $('#mRules').onclick = showHelp;
@@ -739,12 +762,13 @@ function render() {
   if (b.hu) bf.push(T('护剑符：下一锤不会碎', "Ward: next strike can't break")); if (b.zhu) bf.push(T('祝福油：下一锤成功率 +25%', 'Blessing: next strike +25%')); if (b.tian) bf.push(T('天工锤：下一锤必成', 'Heaven Hammer: next strike succeeds')); if (b.cui > 0) bf.push(T('淬火水：还剩 ' + b.cui + ' 锤', 'Quench Water: ' + b.cui + ' strikes left')); if (b.ya) bf.push(T('牙行帖：下次卖 +40%', "Broker's Note: next sale +40%"));
   bf.push(N(wp) + T('：', ': ') + D(wp).replace(/^[^：:]*[：:]\s*/, ''));
   $('#buffs').innerHTML = bf.map((x) => `<span>${x}</span>`).join('');
-  $('#stam').textContent = run.fever > 0 ? T('上头！还剩 ' + run.fever + ' 锤不花体力', 'FEVER! ' + run.fever + ' free strikes') : T('体力 ', 'Stamina ') + run.stam + '/' + maxStam();
+  $('#stam').textContent = run.fever === 1 ? T('最后一锤 · 会碎！', 'Last one · can break!') : run.fever > 0 ? T('上头！还剩 ' + run.fever + ' 锤不花体力', 'FEVER! ' + run.fever + ' free strikes') : T('体力 ', 'Stamina ') + run.stam + '/' + maxStam();
   btnS.disabled = run.stam <= 0 && !(run.fever > 0);
   const fe = $('#fire'), fr = run.fire || 0;
-  if (run.fever > 0) fe.innerHTML = `<b>${T('上头时刻', 'FEVER')}</b><span>${T('还剩 ' + run.fever + ' 锤 · 不花体力 · 不会碎 · 大成功 +', run.fever + ' strikes left · free · no breaks · great +')}${pct(FEVER_GREAT)}</span>`;
+  if (run.fever === 1) fe.innerHTML = `<b>${T('最后一锤', 'LAST STRIKE')}</b><span>${T('这一锤会碎！碎裂率 ', 'This one can break! Break chance ')}${pct(o.brk)}${T(' · 想稳就先卖掉或上架', ' · sell or rack it to play safe')}</span>`;
+  else if (run.fever > 0) fe.innerHTML = `<b>${T('上头时刻', 'FEVER')}</b><span>${T('还剩 ' + run.fever + ' 锤 · 不花体力 · 不会碎 · 大成功 +', run.fever + ' strikes left · free · no breaks · great +')}${pct(FEVER_GREAT)}</span>`;
   else fe.innerHTML = `<b>${T('火候', 'Fire')}</b><span class="segs">${Array.from({ length: FIRE_MAX }, (_, i) => `<i class="${i < fr ? 'on' : ''}"></i>`).join('')}</span><span>${fr}/${FIRE_MAX} · ${T('满了进入上头时刻', 'full = Fever')}</span>`;
-  fe.classList.toggle('hot', run.fever > 0); $('#app').classList.toggle('fever', run.fever > 0);
+  fe.classList.toggle('hot', run.fever > 1); fe.classList.toggle('last', run.fever === 1); $('#app').classList.toggle('fever', run.fever > 0); $('#app').classList.toggle('lastfever', run.fever === 1);
   $('#btnSell').disabled = s.level < 1;
   $('#sellPrice').textContent = s.level < 1 ? T('+1 起收', 'from +1') : fmt(priceOf(s));
   $('#btnStore').disabled = s.level < 1 || run.rack.length >= rackCap();
@@ -757,7 +781,7 @@ function render() {
   $('#mNow').textContent = '×' + mk.now.toFixed(2); $('#mNow').className = cl;
   const mc = $('#mChg'); mc.textContent = (up ? '▲ ' : '▼ ') + pct(Math.abs(chg)) + T(' 比昨收', ' vs close'); mc.className = 'mchg ' + cl;
   $('#mStats').innerHTML = `<span>${T('今开', 'Open')} <b>${mk.open.toFixed(2)}</b></span><span>${T('昨收', 'Prev')} <b>${mk.prevClose.toFixed(2)}</b></span><span>${T('最高', 'High')} <b class="up">${mk.hi.toFixed(2)}</b></span><span>${T('最低', 'Low')} <b class="down">${mk.lo.toFixed(2)}</b></span>`;
-  $('#mNews').textContent = mk.news;
+  $('#mNews').textContent = newsText(mk.news);
   $('#mTip').textContent = has('xin') ? T(`内幕消息：明天${mk.gap >= 1 ? '高开' : '低开'}，大约 ${mk.gap >= 1 ? '+' : '-'}${pct(Math.abs(mk.gap - 1))}${mk.li ? '（黄历保底 ×1.40）' : ''}`, `Insider: tomorrow opens ${mk.gap >= 1 ? 'up' : 'down'} about ${pct(Math.abs(mk.gap - 1))}${mk.li ? ' (Almanac floor ×1.40)' : ''}`) : mk.li ? T('黄历：明天开盘至少 ×1.40', 'Almanac: tomorrow opens at ×1.40 or higher') : (has('ke') && mk.now < 1 ? T('熟客按 ×1.00 收。', 'Regulars still pay ×1.00.') : T('每打一锤剑价跳一下；睡觉收盘，明天跳空开盘。', 'The price moves every strike; sleeping closes the day.'));
   if (tab === 'market') drawMarket();
   const cap = rackCap();
@@ -770,7 +794,7 @@ function render() {
   document.querySelector('[data-tab="bag"]').innerHTML = T('背包', 'Bag') + (cnt ? `<span class="n">${cnt}</span>` : '');
   document.querySelector('[data-tab="rack"]').innerHTML = T('剑架', 'Rack') + (run.rack.length ? `<span class="n">${run.rack.length}</span>` : '');
   $('#seals').innerHTML = run.relics.length ? run.relics.map((id) => `<button class="seal" type="button" data-id="${id}" title="${N(RMAP[id])}: ${D(RMAP[id])}" aria-label="${N(RMAP[id])}">${RMAP[id].ch}</button>`).join('') : `<span class="empty">${T('还没有秘籍。每还清一期能挑一本。', 'No seals yet. You get one after each payment.')}</span>`;
-  $('#log').innerHTML = run.log.map(([tx, c]) => `<div class="${c}">${tx}</div>`).join('');
+  $('#log').innerHTML = run.log.map((e) => `<div class="${e.length >= 3 ? e[2] : e[1]}">${logText(e)}</div>`).join('');
   const cb = $('#combo');
   if (run.streak >= 2) { const was = cb.dataset.n; cb.innerHTML = `×${run.streak}<small>${T('连击', 'COMBO')}</small>`; cb.classList.add('on'); if (was !== String(run.streak)) { cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump'); } cb.dataset.n = run.streak; }
   else { cb.classList.remove('on'); cb.dataset.n = ''; }
@@ -1047,9 +1071,10 @@ const fx = {
     }
     const txt = { succ: [T('成功 +', 'Success +') + ev.delta, '#8BD06A'], great: [T('大成功！+', 'GREAT! +') + ev.delta, '#F2C14E'], keep: [T('无变化', 'No change'), '#A8988A'], dmg: [ev.delta ? T('受损 -1', 'Damaged -1') : T('受损', 'Damaged'), '#F08A3C'], brk: [T('碎了', 'SHATTERED'), '#E5483B'] }[r];
     this.pop(ev.tierUp ? tierOf(ev.level).name + '!' : txt[0], ev.tierUp ? tierOf(ev.level).color : txt[1], r === 'great' || r === 'brk' || ev.tierUp);
-    if (ev.note) this.pop2(ev.note, '#F2C14E'); else if (ev.nearBreak) this.pop2(T('好险！差一点就碎了', 'Close call!'), '#F08A3C');
+    if (ev.note) this.pop2(typeof ev.note === 'function' ? ev.note() : ev.note, '#F2C14E'); else if (ev.nearBreak) this.pop2(T('好险！差一点就碎了', 'Close call!'), '#F08A3C');
     if (ev.feverStart) setTimeout(() => this.feverOn(), 160);
-    if (ev.feverEnd) this.pop2(T('冷静下来了', 'Cooling down'), '#A8988A');
+    if (ev.lastWarn) this.pop2(T('最后一锤！这一锤会碎', 'Last fever strike: it can break!'), '#FF6A4D');
+    else if (ev.feverEnd) this.pop2(r === 'brk' ? T('上头一时爽……', 'Rode it too far…') : T('冷静下来了', 'Cooling down'), '#A8988A');
     sfx(r, ev.streak);
     vib({ keep: 8, succ: 18, great: [25, 30, 60], dmg: 45, brk: [90, 40, 140] }[r]);
   },
@@ -1219,7 +1244,7 @@ function demoTick() {
   const s = run.sword, o = odds(s), q = quota(), need = q - run.gold;
   if (run.stam <= 0 && !(run.fever > 0)) { if (run.bag.bao) { useItem('bao'); return; } if (run.day >= DAYS && s.level >= 1 && run.gold < q) sell(); rest(); return; }
   const p = priceOf(s), enough = p >= need * 1.05 && need > 0;
-  if (s.level >= 1 && !(run.fever > 0) && (o.brk > 0.16 || (enough && o.brk > 0.04))) {
+  if (s.level >= 1 && !(run.fever > 1) && (o.brk > 0.16 || (enough && o.brk > 0.04))) {
     if (s.level >= 8 && run.rack.length < rackCap() && !enough) { storeSword(); return; }
     sell(); return;
   }
