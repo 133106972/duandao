@@ -1,4 +1,4 @@
-// Composes store art from raw shots: captioned 1080x1920 screenshots, 512 icon, 1920x1080 cover, 1920x1080 video frame.
+// Composes store art from raw shots: captioned 1080x1920 screenshots and the 512 icon.
 // node tools/store-compose.js <rawdir> <outdir>
 const launch = require('./pw'); const fs = require('fs');
 (async () => {
@@ -22,21 +22,6 @@ const launch = require('./pw'); const fs = require('fs');
   await render(512, 512, `<div class="bg" style="width:512px;height:512px;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#FF8E35 0%,#C2410C 38%,#3A1206 78%,#120E0C 100%)">
     <div class="brush" style="font-size:330px;line-height:1;color:#FFF6E0;text-shadow:0 0 40px rgba(255,200,120,.8),0 10px 0 #5A1F06;margin-top:-10px">锤</div>
     <span class="seal" style="position:absolute;right:46px;bottom:46px;width:96px;height:96px;font-size:62px;box-shadow:0 6px 0 #6B0717">铺</span></div>`, 'icon-512.png');
-  // cover 1920x1080: logo on the left, three phones on the right
-  await render(1920, 1080, `<div class="bg" style="width:1920px;height:1080px">
-    <div style="position:absolute;left:110px;top:320px;display:grid;gap:26px;justify-items:start">
-      <span class="seal" style="width:96px;height:96px;font-size:60px">铺</span>
-      <div class="brush" style="font-size:156px;line-height:1;white-space:nowrap">一锤子买卖</div>
-      <div style="font:700 40px 'Noto Sans SC';letter-spacing:.25em;color:#E8D5C0">打铁 · 赌运气 · 还高利贷</div></div>
-    <img class="phone" src="${img('fever')}" style="position:absolute;left:1060px;top:150px;width:410px;transform:rotate(-6deg)">
-    <img class="phone" src="${img('ascend')}" style="position:absolute;left:1430px;top:110px;width:430px;transform:rotate(5deg)"></div>`, 'cover-1920x1080.png');
-  // frame for the landscape trailer: the 9:16 video sits in the middle (608x1080 at x=656)
-  await render(1920, 1080, `<div class="bg" style="width:1920px;height:1080px">
-    <div style="position:absolute;left:60px;width:560px;top:330px;display:grid;justify-items:center;gap:22px;text-align:center">
-      <span class="seal" style="width:84px;height:84px;font-size:52px">铺</span>
-      <div class="brush" style="font-size:118px;line-height:1;white-space:nowrap">一锤子买卖</div>
-      <div style="font:700 34px 'Noto Sans SC';letter-spacing:.2em;color:#E8D5C0">打铁 · 赌运气 · 还高利贷</div></div>
-    <div style="position:absolute;right:60px;width:560px;top:300px;display:grid;gap:34px;font:700 44px 'Noto Sans SC';color:#FBE9D8">
-      <div>🔨 一锤升级，一锤碎</div><div>📈 剑价像股票一样跳</div><div>🐟 咸鱼也能进化成鲲</div><div>💸 每 3 天还一次高利贷</div></div></div>`, 'video-frame-1920x1080.png');
+  // covers, key art and the logo are made by tools/store-keyart.js (TapTap rejects screenshot collages and taglines on them)
   console.log('ok'); await b.close();
 })();

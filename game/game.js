@@ -1,4 +1,4 @@
-// 一锤子买卖 / One Hammer Deal v0.15 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
+// 再锤一下（原名「一锤子买卖」，TapTap 上重名后改名）/ One Hammer Deal v1.0 — forging gamble incremental. Plain JS, no dependencies. See DESIGN.md.
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -763,7 +763,7 @@ function applyStatic() {
     if (!$('#tcfonts')) { const l = document.createElement('link'); l.id = 'tcfonts'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap'; document.head.appendChild(l); }
     rs.setProperty('--sans', '"Noto Sans TC","Noto Sans SC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif'); rs.setProperty('--serif', '"Noto Serif TC","Noto Serif SC","Songti TC",serif');
   } else { rs.removeProperty('--sans'); rs.removeProperty('--serif'); }
-  document.title = T('一锤子买卖', 'One Hammer Deal');
+  document.title = T('再锤一下', 'One Hammer Deal');
   const set = (id, zh, en) => { const el = $(id); if (el) el.textContent = T(zh, en); };
   set('#debtLbl', '欠钱庄', 'Debt'); set('#goldLbl', '金', 'Gold'); set('#valLbl', '估价', 'Value');
   set('#strikeLbl', '锤', 'Strike'); set('#sellLbl', '出售', 'Sell'); set('#storeLbl', '上架', 'Rack');
@@ -775,7 +775,7 @@ function applyStatic() {
   set('#shopH', '铺子', 'Workshop'); set('#sFameLbl', '名望', 'Fame'); set('#shopFoot', '每局结束按撑过的期数和最高卖价得名望。升级永久有效。', 'Each run ends with fame based on periods survived and your best sale. Upgrades are permanent.');
   set('#secMat', '料子', 'Materials'); set('#secUpg', '手艺', 'Skills'); set('#shopBack', '回去', 'Back');
   set('#codexFoot', '打出过的兵器会记在这里。收集得越多，铺子的永久加成越多。', 'Every weapon you forge is recorded here. Collect more for permanent bonuses.'); set('#codexBack', '回去', 'Back');
-  const en = !['zh', 'zht'].includes(LANG), logo = $('.logo'); logo.textContent = T('一锤子买卖', 'One Hammer Deal');
+  const en = !['zh', 'zht'].includes(LANG), logo = $('.logo'); logo.textContent = T('再锤一下', 'One Hammer Deal');
   Object.assign(logo.style, { fontFamily: en || LANG === 'zht' ? 'var(--serif)' : '', fontSize: en ? 'clamp(34px,9.5vw,64px)' : '', whiteSpace: en ? 'normal' : '', fontWeight: en ? '900' : '' });
   $('#tTag').style.letterSpacing = en ? '.08em' : '';
   $('#strikeLbl').style.font = en ? '900 26px var(--serif)' : '';
@@ -797,7 +797,7 @@ const shopOpen = () => !!(meta.ends || meta.totalFame > 0 || meta.best.period > 
 function showTitle() {
   hideScreens(); closeSheet(); $('#titleScreen').hidden = false; $('#tShop').hidden = !shopOpen();
   $('#tCont').hidden = !run; $('#tFame').textContent = fmt(meta.fame); $('#tCodexN').textContent = codexN() + '/' + WEAPONS.length;
-  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v0.15 · 存档在这台设备的浏览器里', 'v0.15 · saved in this browser');
+  $('#tFoot').textContent = meta.best.period ? T(`最好成绩：撑过 ${meta.best.period} 期 · 最高 +${meta.best.level} · 单件 ${fmt(meta.best.sale)}`, `Best: ${meta.best.period} periods · +${meta.best.level} · best sale ${fmt(meta.best.sale)}`) : T('v1.0 · 存档在这台设备的浏览器里', 'v1.0 · saved in this browser');
 }
 function showShop() {
   hideScreens(); $('#shopScreen').hidden = false; $('#sFame').textContent = fmt(meta.fame);
@@ -1663,7 +1663,7 @@ if (DEMO) {
   setInterval(demoTick, 380);
 } else if (run) { showTitle(); render(); } else { showTitle(); if (!meta.asked && !meta.runs) welcome(); }
 function welcome() {
-  openSheet(`<h2>${T('欢迎来到一锤子买卖', 'Welcome to One Hammer Deal')}</h2><p>${T('第一次玩吗？', 'First time here?')}</p><div class="btns"><button class="btn" id="wNew" type="button">${T('我是新手，带我玩一遍', "I'm new, show me how")}</button><button class="btn ghost" id="wOld" type="button">${T('我是老手，直接开始', "I've played, let me in")}</button></div>`);
+  openSheet(`<h2>${T('欢迎来到《再锤一下》', 'Welcome to One Hammer Deal')}</h2><p>${T('第一次玩吗？', 'First time here?')}</p><div class="btns"><button class="btn" id="wNew" type="button">${T('我是新手，带我玩一遍', "I'm new, show me how")}</button><button class="btn ghost" id="wOld" type="button">${T('我是老手，直接开始', "I've played, let me in")}</button></div>`);
   $('#wNew').onclick = () => { meta.asked = true; saveMeta(); tutForce = true; startRun(); };
   $('#wOld').onclick = () => { meta.asked = true; meta.tutDone = true; saveMeta(); startRun(); };
 }
