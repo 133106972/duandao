@@ -1,9 +1,9 @@
 // Key art for store pages, composed (not a screenshot): the game's own weapon art rendered large on a painted forge
 // background, with the brush title where the store rules allow one. TapTap rejects raw screenshots and any text but the title.
-// node tools/store-keyart.js <outdir> [title=再锤一下]     (needs the game served at localhost:8766 for the weapon renders)
+// node tools/store-keyart.js <outdir> [title=咸鱼铁匠铺]     (needs the game served at localhost:8766 for the weapon renders)
 const { chromium } = require('playwright'); const fs = require('fs');
 (async () => {
-  const out = process.argv[2] || '.', TITLE = process.argv[3] || '再锤一下'; fs.mkdirSync(out, { recursive: true });
+  const out = process.argv[2] || '.', TITLE = process.argv[3] || '咸鱼铁匠铺'; fs.mkdirSync(out, { recursive: true });
   const b = await chromium.launch({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: 'localhost,127.0.0.1' } : undefined });
   // 1. transparent renders of ascended weapons, straight from the game's renderer (no rune glyphs: no stray text allowed)
   const g = await (await b.newContext({ viewport: { width: 800, height: 600 }, deviceScaleFactor: 1 })).newPage();
@@ -25,9 +25,11 @@ const { chromium } = require('playwright'); const fs = require('fs');
   // layouts: hero = [centre x, centre y, width, rotation]; title = [x ('c' = centred), y, font size]; all as fractions of the image
   const jobs = [
     // title = [x ('c' = centred), y, font size as a share of the image height, lines]
-    ['宣传图-1920x1080', 1920, 1080, { hero: [0.68, 0.66, 0.56, -7], title: [0.055, 0.2, 0.3, 2] }],
-    ['横版封面-1380x645', 1380, 645, { hero: [0.7, 0.68, 0.5, -6], title: [0.05, 0.16, 0.34, 2] }],
-    ['竖版封面-1000x1500', 1000, 1500, { hero: [0.5, 0.74, 0.94, -9], title: ['c', 0.1, 0.15, 1] }],
+    // (sized for a five-character title that breaks 2 + 3, e.g. 咸鱼 / 铁匠铺)
+    ['宣传图-16比9-1920x1080', 1920, 1080, { hero: [0.7, 0.66, 0.54, -7], title: [0.05, 0.2, 0.22, 2] }],
+    ['宣传图-1比1-1440x1440', 1440, 1440, { hero: [0.5, 0.72, 0.9, -9], title: ['c', 0.08, 0.15, 1] }],
+    ['横版封面-1380x645', 1380, 645, { hero: [0.72, 0.68, 0.48, -6], title: [0.045, 0.17, 0.27, 2] }],
+    ['竖版封面-1000x1500', 1000, 1500, { hero: [0.5, 0.74, 0.94, -9], title: ['c', 0.1, 0.115, 1] }],
     ['无LOGO宣传图-横版-1920x1080', 1920, 1080, { hero: [0.56, 0.64, 0.6, -7], title: null }],
     ['无LOGO宣传图-竖版-1080x1440', 1080, 1440, { hero: [0.5, 0.7, 0.94, -9], title: null }],
     ['游戏库背景壁纸-3840x1240', 3840, 1240, { hero: [0.66, 0.64, 0.3, -6], title: null }],

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>再锤一下 · TapTap 上架指引</title>
+<title>咸鱼铁匠铺 · TapTap 上架指引</title>
 <style>
 :root{--bg:#F7F5F2;--card:#FFFFFF;--line:#E4DED6;--text:#1F1A17;--dim:#6E645C;--accent:#E2560F;--ok:#1E8E5A;--warn:#B54708;color-scheme:light}
 *{box-sizing:border-box}
@@ -28,33 +28,35 @@ ul{margin:6px 0;padding-left:1.3em}
 </head>
 <body>
 <main>
-  <h1>再锤一下 · TapTap 上架指引</h1>
+  <h1>咸鱼铁匠铺 · TapTap 上架指引</h1>
   <p class="sub">按顺序一步一步来。每一步要用的文件都在这个文件夹里，文件夹前面的数字就是步骤号。要填的文字点「复制」再粘贴。</p>
 
   <section style="border-color:#E2560F">
-    <h2><span class="n">!</span>审核没过，这次重新提交要改这几处</h2>
+    <h2><span class="n">!</span>这次重新提交要改这几处</h2>
     <p>审核意见有三条：① 宣传图不能直接用游戏截图；② 宣传图上除了游戏名不能有别的字；③ TapTap 上已经有一款叫《一锤子买卖》的游戏，要改名。</p>
-    <p><b>新名字：《再锤一下》。</b>提交前先在 TapTap App 里搜一下「再锤一下」，确认没有重名。万一有，告诉我，备用名是「一锤定金」和「咸鱼铁匠铺」，我几分钟就能重出一套。</p>
+    <p><b>新名字：《咸鱼铁匠铺》。</b>（原先想用的「再锤一下」和已有的《龙泉铸剑铺：再锤一下》撞了，所以不用。商店文案里也不再出现「再锤一下」这四个字。）</p>
     <table>
-      <tr><td>游戏名</td><td>改成 <b>再锤一下</b>（「Android/电脑主机端」和「iOS」两个标签页都要改）</td></tr>
-      <tr><td>H5 包体</td><td>重新上传 <code>01_H5包体/再锤一下-h5.zip</code>（游戏里的标题已经改了，版本号是 v1.0）</td></tr>
-      <tr><td>宣传图（16:9）</td><td>删掉旧的，换成 <code>06_宣传图16比9/宣传图-1920x1080.png</code>。这张是重新排版的：长了光翼的咸鱼、激光剑、金箍棒、锤子和砧子，上面只有游戏名。</td></tr>
-      <tr><td>游戏截图</td><td>换成 <code>03_游戏截图/</code> 里新的 6 张（第 6 张是标题页，上面的名字改了）</td></tr>
-      <tr><td>宣传片</td><td>换成 <code>05_宣传片/宣传片-横版.mp4</code>（左边的名字改了）。实机录屏里没有出现游戏名，不用换。</td></tr>
-      <tr><td>Windows 素材</td><td>LOGO、横竖封面换成 07、08 里的新文件；壁纸和无 LOGO 宣传图也换成 09、10 里的新图，和宣传图是同一套画面。</td></tr>
-      <tr><td>图标</td><td>不用换（图标上是「锤」字，没有旧名字）</td></tr>
-      <tr><td>Windows 发布状态</td><td>选「敬请期待」（我们没有 Windows 安装包）；安卓和 iOS 选「提供游玩」</td></tr>
+      <tr><td>游戏名称</td><td><b>咸鱼铁匠铺</b></td></tr>
+      <tr><td>H5 包体</td><td>重新上传 <code>01_H5包体/咸鱼铁匠铺-h5.zip</code>（游戏里的标题已经改了，版本号 v1.0）</td></tr>
+      <tr><td>宣传图（16:9）</td><td><code>06_宣传图/宣传图-16比9-1920x1080.png</code></td></tr>
+      <tr><td>宣传图（1:1）</td><td><code>06_宣传图/宣传图-1比1-1440x1440.png</code>（新加的必填项，1440×1440）</td></tr>
+      <tr><td>游戏截图</td><td>只有第 6 张（标题页）变了：<code>03_游戏截图/截图6.png</code>。前 5 张里没有游戏名，传过的不用换。</td></tr>
+      <tr><td>视频</td><td>宣传片换成 <code>05_宣传片/宣传片-横版.mp4</code>（左边的名字改了）。实机录屏里没有游戏名，不用换。</td></tr>
+      <tr><td>Windows 素材</td><td>LOGO 用 07，横版、竖版封面用 08（这三个带游戏名，必须换）；壁纸用 09，无 LOGO 宣传图用 10。</td></tr>
+      <tr><td>简介、首页推荐语</td><td>下面第 3 步里的文字我改过了（去掉了「再锤一下」），重新复制一遍。</td></tr>
+      <tr><td>图标</td><td>不用换（「锤」字加「铺」字印章，正好对得上新名字）</td></tr>
+      <tr><td>Windows 发布状态</td><td>选「敬请期待」；安卓和 iOS 选「提供游玩」</td></tr>
     </table>
   </section>
 
   <section>
     <h2><span class="n">1</span>上传 H5 包体</h2>
     <table>
-      <tr><td>上传文件</td><td><code>01_H5包体/再锤一下-h5.zip</code>（不要解压，直接传这个 zip）</td></tr>
+      <tr><td>上传文件</td><td><code>01_H5包体/咸鱼铁匠铺-h5.zip</code>（不要解压，直接传这个 zip）</td></tr>
       <tr><td>屏幕适配方式</td><td>竖屏</td></tr>
       <tr><td>传完以后</td><td>点右侧「自测」，用手机上<b>最新版 TapTap App</b> 扫码试玩：能打开、能锤、退出再进存档还在，就没问题。</td></tr>
     </table>
-    <p class="tip">上次报错「解压后仅有一个文件夹」，是因为旧包里直接放的是 index.html。新包里是一个文件夹 zaichuiyixia，index.html 在文件夹里面，符合要求。包只有不到 1MB，大小没问题。</p>
+    <p class="tip">上次报错「解压后仅有一个文件夹」，是因为旧包里直接放的是 index.html。新包里是一个文件夹 xianyutiejiangpu，index.html 在文件夹里面，符合要求。包只有不到 1MB，大小没问题。</p>
   </section>
 
   <section>
@@ -66,23 +68,23 @@ ul{margin:6px 0;padding-left:1.3em}
     <h2><span class="n">3</span>商店资料：文字</h2>
     <p class="tip">「Android/电脑主机端」和「iOS」两个标签页都要填，内容一样。</p>
     <table>
-      <tr><td>游戏名</td><td><div class="copy" id="c-name">再锤一下</div><button data-c="c-name">复制</button></td></tr>
-      <tr><td>简介</td><td><div class="copy" id="c-intro">你开了间铁匠铺，什么都能打：剑、菜刀、咸鱼、电钻、马桶搋子……
-每一锤都可能升级，也可能碎。等级越高越值钱，也越容易碎。敢不敢再锤一下？
+      <tr><td>游戏名</td><td><div class="copy" id="c-name">咸鱼铁匠铺</div><button data-c="c-name">复制</button></td></tr>
+      <tr><td>简介</td><td><div class="copy" id="c-intro">你开了间铁匠铺，砧子上什么都有：咸鱼、菜刀、电钻、马桶搋子、金箍棒……
+每一锤都可能升级，也可能碎。等级越高越值钱，也越容易碎。敢不敢再来一锤？
 
 ● 剑价像股票：每锤都在跳，有日 K、有利好利空，看准了再卖
 ● 高利贷：每 3 天还一期，一期比一期多，还不上铺子就倒
 ● 上头时刻：火候满 10 格，8 锤免费，最后一锤可能碎
-● 进化：每件兵器 +25、+50、+75 进化一次，咸鱼最后能变成北冥之鲲
+● 咸鱼翻身：每件兵器 +25、+50、+75 进化一次，咸鱼最后能变成北冥之鲲
 ● 20 种奇葩兵器、5 档稀有度、26 本秘籍、13 种道具，还有后悔药
 ● 两档难度：新手放松玩，困难欠款每期翻五倍
 ● 数字没有上限：万、亿、兆……一直到无量大数
 ● 10 种语言，手机、电脑都能玩，单机，没有内购</div><button data-c="c-intro">复制</button></td></tr>
       <tr><td>开发者的话</td><td><div class="copy" id="c-dev">大家好，这是我第一次上架自己做的小游戏。
-灵感来自铁匠铺打铁：每一锤都可能更好，也可能全毁了。我想把这种「再来一锤」的心跳感，和炒股、还债揉在一起。
+灵感来自铁匠铺打铁：每一锤都可能更好，也可能全毁了。我想把这种赌一把的心跳，和炒股、还债揉在一起，再让砧子上躺一条咸鱼。
 游戏不用联网，存档就在你自己的设备里。新手模式可以随便玩；困难模式欠款涨得飞快，适合想挑战的朋友。
 现在是第一版，数值和内容还会继续调。玩得开心，或者哪里不顺手，都欢迎在评论区告诉我。</div><button data-c="c-dev">复制</button></td></tr>
-      <tr><td>首页推荐语</td><td><div class="copy" id="c-rec">一锤升级一锤碎，敢不敢再锤一下？</div><button data-c="c-rec">复制</button> <span class="tip">16 个字，不超过 25 字，没有「最」「第一」这类词</span></td></tr>
+      <tr><td>首页推荐语</td><td><div class="copy" id="c-rec">咸鱼也能锤成鲲，就看你敢不敢再来一锤</div><button data-c="c-rec">复制</button> <span class="tip">18 个字，不超过 25 字，没有「最」「第一」这类词</span></td></tr>
       <tr><td>游戏类型 / 标签</td><td>类型选「休闲」。标签可选：放置、模拟经营、单机、搞笑</td></tr>
       <tr><td>适龄</td><td>8+（你已经选好了）</td></tr>
     </table>
@@ -96,9 +98,10 @@ ul{margin:6px 0;padding-left:1.3em}
         <br><span class="tip">「备用-带卖点文字」里是同样 6 张加了一句卖点的版本，审核要是嫌纯截图不好看可以换，但规则写了宣传类图片最多 2 张，所以默认用纯截图。</span></td></tr>
       <tr><td>游戏实机录屏</td><td><code>04_游戏实机录屏/实机录屏-竖版.mp4</code>（26 秒，1080×1920，H.264，带游戏音效）。开头第一秒就是打铁，符合「前 5 秒展示核心玩法」；没有字幕、没有配音、没有手机外框。</td></tr>
       <tr><td>宣传片（可选）</td><td><code>05_宣传片/宣传片-横版.mp4</code>（24 秒，1920×1080，带游戏音效）。用的是另一段画面（金箍棒、马桶搋子、电钻进化），不和实机录屏重复。</td></tr>
-      <tr><td>宣传图（16:9）</td><td><code>06_宣传图16比9/宣传图-1920x1080.png</code>。重新排版的主视觉图：只有游戏名，没有图标、没有其他宣传字，不是游戏截图。</td></tr>
+      <tr><td>宣传图（16:9）</td><td><code>06_宣传图/宣传图-16比9-1920x1080.png</code>。重新排版的主视觉图：只有游戏名，没有图标、没有其他宣传字，不是游戏截图。</td></tr>
+      <tr><td>宣传图（1:1）</td><td><code>06_宣传图/宣传图-1比1-1440x1440.png</code>。同一套画面的方图，1440×1440。</td></tr>
       <tr><td>首页推荐素材</td><td>传了宣传片就选「使用宣传片」（首页会自动播放）；没传就选「使用宣传图」。</td></tr>
-      <tr><td>游戏 LOGO</td><td><code>07_游戏LOGO/游戏LOGO.png</code>（透明底，宽 1400）</td></tr>
+      <tr><td>游戏 LOGO</td><td><code>07_游戏LOGO/游戏LOGO.png</code>（透明底，宽 1730）</td></tr>
       <tr><td>横版、竖版封面</td><td>横版：<code>08_横版竖版封面/横版封面-1380x645.png</code><br>竖版：<code>08_横版竖版封面/竖版封面-1000x1500.png</code></td></tr>
       <tr><td>游戏库背景壁纸</td><td><code>09_游戏库背景壁纸/游戏库背景壁纸-3840x1240.png</code>（没有任何文字）</td></tr>
       <tr><td>无 LOGO 宣传图</td><td>横版：<code>10_无LOGO宣传图/无LOGO宣传图-横版-1920x1080.png</code><br>竖版：<code>10_无LOGO宣传图/无LOGO宣传图-竖版-1080x1440.png</code>（两张内容一样，都没有文字）</td></tr>
