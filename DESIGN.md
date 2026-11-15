@@ -138,7 +138,7 @@ TapTap 这类 App 里的 H5 是全屏的：页面一直画到屏幕最上面，�
 
 1. **TapTap 重新提审**（最简单、收益最高）：用新名字《咸鱼铁匠铺》和 `store/taptap/` 里的新素材（含 1:1 宣传图）；Windows 选「敬请期待」。
 2. **抖音发视频**：`store/taptap/04_游戏实机录屏/` 的竖版视频，用抖音自带曲库配乐。
-3. **itch.io**（海外，不审核，当天能上）：上传 `dist/forge-web.zip`，选 HTML 游戏、竖屏。流量小，但能马上拿到一个公开链接。
+3. **itch.io**（海外，不审核，当天能上）：资料在 duandao 仓库 `store/itch/`。上传包是单文件版改名成 index.html、放在 zip 最外层（itch 的要求，和 TapTap 要套一层文件夹相反）；Kind of project 选 HTML，Embed in page，视口 960×640（这个尺寸正好触发电脑横版布局），Mobile friendly + Portrait；AI 申报勾 Graphics、Sound、Text、Code。封面和截图用 `tools/store-keyart.js <dir> "One Hammer Deal" itch` 和 `tools/store-shots.js <dir> en 960 640 2`（横版）/ `en`（竖版）生成。
 4. **软著**（慢，约 1–2 个月，但 4399、微信、抖音小游戏多半都要）：
    - 先在中国版权保护中心官网注册并实名，看申请表和登记指南里对「AI 生成 / AI 辅助开发」怎么要求。网上（非官方）的说法是 2026 年起对 AI 生成的材料查得很严，可能要声明并附说明。**必须如实填**：这款游戏的代码是 Claude 按作者的设计写的，而且作者会公开发视频说这件事。
    - 材料：源程序前后各 30 页（每页 50 行，页眉写软件名和版本号）、说明书（带截图，截图里的名字和版本号要和申请的一致：咸鱼铁匠铺、V1.0）、身份证。源程序打印稿和说明书可以用脚本生成。

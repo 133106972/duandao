@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Hammer Deal · itch.io 上架指引</title>
+<style>
+:root{--bg:#F7F5F2;--card:#FFFFFF;--line:#E4DED6;--text:#1F1A17;--dim:#6E645C;--accent:#E2560F;--ok:#1E8E5A;--warn:#B54708;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+main{max-width:860px;margin:0 auto;padding:32px 16px 64px;display:grid;gap:18px}
+h1{margin:0;font-size:26px}
+.sub{margin:0;color:var(--dim)}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+h2{margin:0 0 10px;font-size:18px;display:flex;gap:10px;align-items:baseline}
+h2 .n{background:var(--accent);color:#fff;border-radius:8px;padding:0 9px;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{border-top:1px solid var(--line);padding:9px 6px;vertical-align:top}
+td:first-child{width:170px;font-weight:700}
+code{background:#F1ECE6;border-radius:6px;padding:1px 6px;font-size:13px;word-break:break-all}
+.copy{display:block;white-space:pre-wrap;background:#FBF8F4;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0 4px;font-size:14px}
+button{font:inherit;font-size:13px;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:8px;padding:3px 12px;cursor:pointer}
+button.done{border-color:var(--ok);color:var(--ok)}
+.tip{color:var(--dim);font-size:13px}
+.note{color:var(--warn);font-size:14px}
+ol,ul{margin:6px 0;padding-left:1.3em}
+</style>
+</head>
+<body>
+<main>
+  <h1>One Hammer Deal · itch.io 上架指引</h1>
+  <p class="sub">itch.io 是海外的独立游戏网站，不用审核，填完点发布就上线。页面全是英文，下面每一步写了对应的英文按钮名。英文游戏名用游戏里已有的 <b>One Hammer Deal</b>；海外玩家打开时，游戏会按浏览器语言自动显示英文（10 种语言都有）。</p>
+
+  <section>
+    <h2><span class="n">1</span>注册账号</h2>
+    <ol>
+      <li>打开 itch.io，右上角 <b>Register</b>。</li>
+      <li>用户名会变成你的主页网址（例如 <code>firesideginger.itch.io</code>），建议用工作室的英文名，比如 <code>firesideginger</code>。</li>
+      <li>勾选 <b>I'm interested in distributing content on itch.io</b>（我要发布作品），这样才有发布入口。</li>
+      <li>去邮箱点验证链接。没验证邮箱的话，作品不能公开。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>新建项目</h2>
+    <p>登录后右上角头像旁的箭头 → <b>Upload new project</b>（或 Dashboard → <b>Create new project</b>）。按顺序填：</p>
+    <table>
+      <tr><td>Title</td><td><div class="copy" id="c-title">One Hammer Deal</div><button data-c="c-title">复制</button></td></tr>
+      <tr><td>Project URL</td><td>自动生成 <code>one-hammer-deal</code>，不用改</td></tr>
+      <tr><td>Short description or tagline</td><td><div class="copy" id="c-tag">Forge anything, gamble on every strike, and pay back the loan shark.</div><button data-c="c-tag">复制</button></td></tr>
+      <tr><td>Classification</td><td>Games</td></tr>
+      <tr><td>Kind of project</td><td><b>HTML</b>（这个最重要，选了它游戏才能在网页里直接玩）</td></tr>
+      <tr><td>Release status</td><td>Released</td></tr>
+      <tr><td>Pricing</td><td><b>No payments</b>（先免费。以后想收打赏再改成 Donate，要绑定 PayPal 或银行卡收款）</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>上传游戏</h2>
+    <table>
+      <tr><td>Uploads</td><td>点 <b>Upload files</b>，选 <code>01_上传包/one-hammer-deal-itch.zip</code>（不要解压）。传完后在文件下面勾选 <b>This file will be played in the browser</b>。</td></tr>
+      <tr><td>Embed options</td><td>选 <b>Embed in page</b>（在页面里直接玩）</td></tr>
+      <tr><td>Viewport dimensions</td><td><b>960 × 640</b>。这个尺寸下游戏会用电脑版的横向布局（左边铁匠铺，右边按钮和行情）。</td></tr>
+      <tr><td>Frame options</td><td>勾选 <b>Mobile friendly</b>，Orientation 选 <b>Portrait</b>（手机竖屏）；勾选 <b>Fullscreen button</b>。<br>不要勾 Automatically start on page load（声音要玩家点一下才能出来）和 Enable scrollbars。</td></tr>
+    </table>
+    <p class="tip">itch 要求 zip 里 index.html 放在最外层，和 TapTap（要套一层文件夹）正好相反，所以两个包不能混用。</p>
+  </section>
+
+  <section>
+    <h2><span class="n">4</span>介绍、分类、标签</h2>
+    <table>
+      <tr><td>Description</td><td><div class="copy" id="c-desc">You run a smithy that can forge anything: swords, cleavers, a salted fish, a toilet plunger, a power drill…
+
+Every strike can level your item up, or shatter it. The higher it goes, the more it's worth and the easier it breaks. Will you strike one more time?
+
+• A blade market that moves like a stock chart: every strike ticks the price, with daily candles and market news
+• A loan shark who comes for his money every 3 days, and wants more each time
+• Fever: fill the fire meter for 8 free strikes. The last one can still break
+• Every weapon evolves at +25, +50 and +75. The salted fish ends up as the winged Kun of the Northern Sea
+• 20 weird weapons in 5 rarities, 26 seals, 13 items, a sword rack, smelting and a Regret Pill
+• Numbers with no upper limit
+• Easy and Hard modes, a short tutorial, and permanent upgrades between runs
+• 10 languages: English, 简体中文, 繁體中文, Español, Français, Português, Deutsch, Русский, 日本語, 한국어
+• Plays on phone and desktop. Keyboard: Space = strike, S = sell, A = rack, E = sleep
+
+Your progress is saved in your browser.
+
+Made by Fireside Ginger Cat (爱烤火的橘猫). Designed and playtested by a human; the code, art, sound and translations were made with Claude Code.</div><button data-c="c-desc">复制</button></td></tr>
+      <tr><td>Genre</td><td>Simulation</td></tr>
+      <tr><td>Tags</td><td><div class="copy" id="c-tags">incremental, clicker, idle, blacksmith, crafting, roguelite, casual, funny, singleplayer, mobile</div><button data-c="c-tags">复制</button> <span class="tip">一个一个输进去，回车确认，最多 10 个</span></td></tr>
+      <tr><td>AI generation disclosure</td><td>选 <b>Yes</b>，下面勾 <b>Graphics、Sound、Text、Code</b> 四个。<br><span class="tip">理由：代码、翻译和文字是 AI 写的；画面和音效是 AI 写的代码现场画出来、合成出来的。itch 要求如实申报，没申报的作品会被搜索排除。勾了以后只是不出现在「No AI」筛选里，其他不受影响；而且你本来就要公开讲这是 AI 做的。</span></td></tr>
+      <tr><td>App store links / Custom noun</td><td>留空</td></tr>
+      <tr><td>Community</td><td>选 <b>Comments</b>（开评论区）</td></tr>
+      <tr><td>Visibility &amp; access</td><td>先选 <b>Draft</b>（草稿），第 6 步测完再改成 Public</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="n">5</span>封面和截图（编辑页右边那一栏）</h2>
+    <table>
+      <tr><td>Cover image</td><td><code>02_封面/cover-630x500.png</code>（itch 推荐 630×500）。想更清楚就传同目录下 1260×1000 那张，比例一样，二选一。</td></tr>
+      <tr><td>Gameplay video</td><td>只能填 YouTube 或 Vimeo 链接，没有就留空</td></tr>
+      <tr><td>Screenshots</td><td><code>03_截图/</code> 里 5 张，按 1→5 的顺序传。前两张和第 5 张是电脑横版，3、4 是手机竖版。</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="n">6</span>保存、试玩、公开</h2>
+    <ol>
+      <li>点最下面 <b>Save &amp; view page</b>，会打开游戏页面。</li>
+      <li>点 <b>Run game</b> 试玩：能开局、能锤、有声音；点右下角全屏按钮也试一下。用手机打开同一个网址再试一次。</li>
+      <li>没问题就回到编辑页（页面顶部 <b>Edit game</b>），把 Visibility 改成 <b>Public</b>，再 Save。</li>
+      <li>把游戏网址（形如 <code>你的用户名.itch.io/one-hammer-deal</code>）发给我，我把它加进 GitHub 主页和开发总结里。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="n">+</span>可选：把页面配色调成游戏的样子</h2>
+    <p>游戏页面顶部 <b>Edit theme</b>：背景 <code>#130F0D</code>，文字 <code>#F3E9DC</code>，链接和按钮 <code>#FF7A1A</code>。不调也行。</p>
+    <p class="note">提醒：存档在玩家自己的浏览器里，换浏览器或清浏览数据会重来。itch 不经手存档，这个和 TapTap 版一样。</p>
+  </section>
+</main>
+<script>
+document.querySelectorAll('button[data-c]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = document.getElementById(b.dataset.c).innerText;
+    var done = function () { b.textContent = '已复制'; b.classList.add('done'); setTimeout(function () { b.textContent = '复制'; b.classList.remove('done'); }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+    function fallback() { var r = document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.c)); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand('copy'); done(); } catch (e) {} }
+  });
+});
+</script>
+</body>
+</html>

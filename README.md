@@ -17,6 +17,7 @@
 | `tools/` | 录宣传片的脚本（Playwright） |
 | `media/` | 自动试玩视频 |
 | `store/taptap/` | TapTap 上架资料包：按上传顺序编号的文件夹（H5 包、图标、截图、实机录屏、宣传片、宣传图、LOGO、封面、壁纸），先看 `00_上架指引（先看这个）.html` |
+| `store/itch/` | itch.io 上架资料：上传包（index.html 在 zip 最外层）、630×500 封面、5 张截图、英文介绍和步骤（`00_itch上架指引（先看这个）.html`） |
 
 ## 本地运行
 

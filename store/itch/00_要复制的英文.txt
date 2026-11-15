@@ -1,0 +1,35 @@
+﻿[Title]
+One Hammer Deal
+
+[Short description or tagline]
+Forge anything, gamble on every strike, and pay back the loan shark.
+
+[Description]
+You run a smithy that can forge anything: swords, cleavers, a salted fish, a toilet plunger, a power drill…
+
+Every strike can level your item up, or shatter it. The higher it goes, the more it's worth and the easier it breaks. Will you strike one more time?
+
+• A blade market that moves like a stock chart: every strike ticks the price, with daily candles and market news
+• A loan shark who comes for his money every 3 days, and wants more each time
+• Fever: fill the fire meter for 8 free strikes. The last one can still break
+• Every weapon evolves at +25, +50 and +75. The salted fish ends up as the winged Kun of the Northern Sea
+• 20 weird weapons in 5 rarities, 26 seals, 13 items, a sword rack, smelting and a Regret Pill
+• Numbers with no upper limit
+• Easy and Hard modes, a short tutorial, and permanent upgrades between runs
+• 10 languages: English, 简体中文, 繁體中文, Español, Français, Português, Deutsch, Русский, 日本語, 한국어
+• Plays on phone and desktop. Keyboard: Space = strike, S = sell, A = rack, E = sleep
+
+Your progress is saved in your browser.
+
+Made by Fireside Ginger Cat (爱烤火的橘猫). Designed and playtested by a human; the code, art, sound and translations were made with Claude Code.
+
+[Tags]
+incremental, clicker, idle, blacksmith, crafting, roguelite, casual, funny, singleplayer, mobile
+
+[Kind of project] HTML
+[Release status] Released
+[Pricing] No payments
+[Embed] Embed in page, viewport 960 x 640, Mobile friendly (Portrait), Fullscreen button
+[Genre] Simulation
+[AI generation disclosure] Yes: Graphics, Sound, Text, Code
+[Community] Comments

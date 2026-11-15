@@ -1,8 +1,9 @@
-// Raw 1080x1920 game screenshots for store pages: node tools/store-shots.js <outdir> [lang]
+// Raw game screenshots for store pages: node tools/store-shots.js <outdir> [lang] [width=360] [height=640] [scale=3]
+// (default 1080x1920 phone shots; 960 640 2 gives 1920x1280 shots of the wide desktop layout)
 const launch = require('./pw');
 (async () => {
   const out = process.argv[2] || '.', lang = process.argv[3] || 'zh';
-  const b = await launch(); const c = await b.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3 });
+  const b = await launch(); const c = await b.newContext({ viewport: { width: +process.argv[4] || 360, height: +process.argv[5] || 640 }, deviceScaleFactor: +process.argv[6] || 3 });
   const p = await c.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
   const codex = { yu: 80, jian: 31, cong: 12, guo: 26, jitui: 9, jiguang: 52, dianzuan: 40, maton: 8, jingu: 77, suanpan: 15, tanghulu: 20, jita: 60, caidao: 18, qian: 27 };
   await p.addInitScript((cx) => { const o = Math.random; window.__rig = null; Math.random = () => (window.__rig != null ? window.__rig : o()); localStorage.setItem('ycmm-meta', JSON.stringify({ asked: true, tutDone: true, seenHelp: true, muted: true, ends: 1, codex: cx })); }, codex);

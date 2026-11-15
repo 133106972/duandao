@@ -1,9 +1,10 @@
 // Key art for store pages, composed (not a screenshot): the game's own weapon art rendered large on a painted forge
 // background, with the brush title where the store rules allow one. TapTap rejects raw screenshots and any text but the title.
-// node tools/store-keyart.js <outdir> [title=咸鱼铁匠铺]     (needs the game served at localhost:8766 for the weapon renders)
+// node tools/store-keyart.js <outdir> [title=咸鱼铁匠铺] [set=taptap|itch]     (needs the game served at localhost:8766 for the weapon renders)
+// set "itch": one 1260x1000 cover (itch.io shows it at 630x500) with a Latin title in the game's serif face.
 const { chromium } = require('playwright'); const fs = require('fs');
 (async () => {
-  const out = process.argv[2] || '.', TITLE = process.argv[3] || '咸鱼铁匠铺'; fs.mkdirSync(out, { recursive: true });
+  const out = process.argv[2] || '.', TITLE = process.argv[3] || '咸鱼铁匠铺', SET = process.argv[4] || 'taptap'; fs.mkdirSync(out, { recursive: true });
   const b = await chromium.launch({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: 'localhost,127.0.0.1' } : undefined });
   // 1. transparent renders of ascended weapons, straight from the game's renderer (no rune glyphs: no stray text allowed)
   const g = await (await b.newContext({ viewport: { width: 800, height: 600 }, deviceScaleFactor: 1 })).newPage();
@@ -21,9 +22,11 @@ const { chromium } = require('playwright'); const fs = require('fs');
   });
   // 2. compose
   const p = await (await b.newContext({ deviceScaleFactor: 1 })).newPage();
-  const HEAD = '<meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=block"><style>*{margin:0;box-sizing:border-box}body{background:#130F0D;overflow:hidden}.t{position:absolute;font-family:"Ma Shan Zheng",serif;color:#FFF1DE;white-space:nowrap;line-height:1;text-shadow:0 0 .12em rgba(255,170,80,.9),0 0 .5em rgba(255,110,20,.55),0 .05em 0 #5A1F06,0 .09em .12em rgba(0,0,0,.6)}</style>';
+  const HEAD = '<meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@900&display=block"><style>' + (SET === 'itch' ? '.t{font-family:"Noto Serif SC",serif!important;font-weight:900}' : '') + '</style><style>*{margin:0;box-sizing:border-box}body{background:#130F0D;overflow:hidden}.t{position:absolute;font-family:"Ma Shan Zheng",serif;color:#FFF1DE;white-space:nowrap;line-height:1;text-shadow:0 0 .12em rgba(255,170,80,.9),0 0 .5em rgba(255,110,20,.55),0 .05em 0 #5A1F06,0 .09em .12em rgba(0,0,0,.6)}</style>';
   // layouts: hero = [centre x, centre y, width, rotation]; title = [x ('c' = centred), y, font size]; all as fractions of the image
-  const jobs = [
+  const jobs = SET === 'itch' ? [
+    ['cover-1260x1000', 1260, 1000, { hero: [0.52, 0.7, 0.68, -8], title: ['c', 0.075, 0.108, 1] }],
+  ] : [
     // title = [x ('c' = centred), y, font size as a share of the image height, lines]
     // (sized for a five-character title that breaks 2 + 3, e.g. 咸鱼 / 铁匠铺)
     ['宣传图-16比9-1920x1080', 1920, 1080, { hero: [0.7, 0.66, 0.54, -7], title: [0.05, 0.2, 0.22, 2] }],
@@ -80,6 +83,7 @@ const { chromium } = require('playwright'); const fs = require('fs');
     }, [art, W, H, lay]);
     await p.screenshot({ path: `${out}/${file}.png` });
   }
+  if (SET === 'itch') { console.log('ok'); await b.close(); return; }
   // the logo alone: transparent background, cropped tight
   await p.setViewportSize({ width: 1800, height: 560 });
   await p.setContent(`<!doctype html><html><head>${HEAD}<style>body{background:transparent}</style></head><body><div class="t" id="t" style="position:static;display:inline-block;font-size:330px;padding:50px 40px 70px">${TITLE}</div></body></html>`, { waitUntil: 'networkidle' });
